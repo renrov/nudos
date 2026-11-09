@@ -41,6 +41,8 @@
 
 .summary {
   margin: 8px 0 0;
+  font-family: var(--reading);
+  font-size: 17px;
   color: var(--muted);
   line-height: 1.45;
   text-wrap: pretty;
@@ -63,7 +65,7 @@
 
 @media (max-width: 560px) {
   .summary {
-    font-size: 14px;
+    font-size: 15px;
   }
 }
 

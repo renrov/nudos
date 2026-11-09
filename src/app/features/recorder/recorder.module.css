@@ -123,6 +123,7 @@
 }
 
 .panel details ul {
+  font-family: var(--reading);
   margin: 6px 0 0;
   padding-left: 18px;
   color: var(--muted);

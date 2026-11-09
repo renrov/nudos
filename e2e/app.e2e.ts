@@ -13,7 +13,7 @@ test("una página de nudo bakea, reproduce, avanza por pasos y se puede recorrer
   page,
 }) => {
   const errors = collectErrors(page);
-  await page.goto("/nudos/nudo-simple/");
+  await page.goto("/nudo-simple/");
   await expect(page.getByRole("heading", { name: "Nudo simple" })).toBeVisible();
   await expect(page.locator("[data-baked=true]")).toBeVisible({ timeout: 60_000 });
 
@@ -39,7 +39,7 @@ test.describe("sin JavaScript", () => {
   test("la página prerenderizada tiene todo el layout, el póster y las etiquetas para compartir", async ({
     page,
   }) => {
-    await page.goto("/nudos/nudo-zeppelin/");
+    await page.goto("/nudo-zeppelin/");
     await expect(page.getByRole("heading", { name: "Nudo Zeppelin" })).toBeVisible();
     await expect(page.getByLabel("Reproducción")).toContainText("1/7");
     await expect(page.getByRole("button", { name: /^Paso 7:/ })).toBeAttached();
@@ -52,7 +52,7 @@ test.describe("sin JavaScript", () => {
     );
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
       "href",
-      /\/nudos\/nudo-zeppelin\/$/,
+      /\/nudo-zeppelin\/$/,
     );
   });
 });
@@ -68,7 +68,7 @@ test("la carga no mueve el layout", async ({ page }) => {
         if (!e.hadRecentInput) (window as unknown as Win).cls += e.value;
     }).observe({ type: "layout-shift", buffered: true });
   });
-  await page.goto("/nudos/as-de-guia/");
+  await page.goto("/as-de-guia/");
   await expect(page.locator("canvas")).toBeVisible();
   await page.waitForTimeout(1500);
   expect(await page.evaluate(() => (window as unknown as Win).cls)).toBe(0);
@@ -76,11 +76,11 @@ test("la carga no mueve el layout", async ({ page }) => {
 
 test("el selector cambia de nudo sin recargar, y el historial funciona", async ({ page }) => {
   const errors = collectErrors(page);
-  await page.goto("/nudos/nudo-simple/");
+  await page.goto("/nudo-simple/");
   await page.evaluate(() => ((window as unknown as Win).marker = 1));
   await page.getByRole("button", { name: "Todos los nudos" }).click();
   await page.getByRole("link", { name: /As de guía/ }).click();
-  await expect(page).toHaveURL(/\/nudos\/as-de-guia\/$/);
+  await expect(page).toHaveURL(/\/as-de-guia\/$/);
   await expect(page.getByRole("heading", { name: "As de guía" })).toBeVisible();
   await expect(page).toHaveTitle(/As de guía/);
   expect(await page.evaluate(() => (window as unknown as Win).marker)).toBe(1);
@@ -91,7 +91,7 @@ test("el selector cambia de nudo sin recargar, y el historial funciona", async (
 });
 
 test("restablecer vista devuelve la cámara después de arrastrar", async ({ page }) => {
-  await page.goto("/nudos/nudo-simple/");
+  await page.goto("/nudo-simple/");
   const reset = page.getByRole("button", { name: "Restablecer vista" });
   await expect(reset).toBeDisabled();
   const box = (await page.locator("canvas").boundingBox())!;
@@ -108,8 +108,8 @@ test("los links viejos con ?knot= redirigen y las páginas desconocidas dan 404"
   page,
 }) => {
   await page.goto("/?knot=zeppelin");
-  await expect(page).toHaveURL(/\/nudos\/nudo-zeppelin\/$/);
-  const response = await page.goto("/nudos/no-existe/");
+  await expect(page).toHaveURL(/\/nudo-zeppelin\/$/);
+  const response = await page.goto("/no-existe/");
   expect(response?.status()).toBe(404);
   await expect(page.getByRole("heading", { name: /no está acá/ })).toBeVisible();
 });
@@ -117,7 +117,7 @@ test("los links viejos con ?knot= redirigen y las páginas desconocidas dan 404"
 test("las URLs viejas en inglés redirigen a las nuevas en castellano", async ({ page }) => {
   const response = await page.goto("/knots/bowline/");
   expect(response?.request().redirectedFrom()?.url()).toMatch(/\/knots\/bowline\/$/);
-  await expect(page).toHaveURL(/\/nudos\/as-de-guia\/$/);
+  await expect(page).toHaveURL(/\/as-de-guia\/$/);
   await expect(page.getByRole("heading", { name: "As de guía" })).toBeVisible();
   await page.goto("/stargazers/");
   await expect(page).toHaveURL(/\/estrellas\/$/);

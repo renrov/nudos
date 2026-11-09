@@ -1,6 +1,6 @@
 # Nudos sin vueltas
 
-App en React + TypeScript + three.js que anima cómo se atan nudos. Sin librería de física. La soga está simulada, no animada con keyframes: unos pines "guía" invisibles tiran de puntos de la soga a lo largo de recorridos escritos a mano y la física hace el resto (cuelga, roza, choca, se ajusta). React Router (modo framework, `ssr: false`) prerenderiza una página estática por nudo; está alojada en Cloudflare Pages.
+App en React + TypeScript + three.js que anima cómo se atan nudos. Sin librería de física. La soga está simulada, no animada con keyframes: unos pines "guía" invisibles tiran de puntos de la soga a lo largo de recorridos escritos a mano y la física hace el resto (cuelga, roza, choca, se ajusta). React Router (modo framework, `ssr: false`) prerenderiza una página estática por nudo; se publica en GitHub Pages, en https://renrov.github.io/nudos/ (también se puede desplegar en Cloudflare Pages).
 
 ## Arrancá acá: ¿qué vas a cambiar?
 
@@ -49,12 +49,12 @@ src/engine/   sin framework: nada de React, ningún framework de DOM, nada de sr
   record/     recording.ts: presets del grabador, recorrido de mano → Guide, grabación → KnotDef y código
   session.ts  createKnotSession: arranca el bakeo de un nudo hacia un Player
 src/app/      app de React Router
-  root.tsx, routes.ts, routes/   "/" (primer nudo), "/nudos/:slug", "/estrellas", "/grabador", "*" (no encontrado)
+  root.tsx, routes.ts, routes/   "/" (primer nudo), "/:slug" (cada nudo), "/estrellas", "/grabador", "*" (no encontrado)
   screens/KnotScreen.tsx         combina las features para la página de un nudo
   features/<nombre>/             viewer, player, picker, tuner; cada una exporta desde su index.ts
   shared/                        site.ts (dominio, URLs), meta.ts (title/etiquetas OG), hooks, ui/ (íconos, IconButton)
   styles/global.css              tokens de diseño y estilos base de los elementos; los componentes usan CSS modules
-  styles/fonts/                  Archivo (variable, OFL), alojada en el sitio; se precarga en root.tsx
+  styles/fonts/                  Archivo (interfaz y títulos) y Alegreya (textos de lectura, `--reading`), variables, OFL; se precargan en root.tsx
 ```
 
 Reglas de dependencias, que hace cumplir oxlint (`.oxlintrc.json`):
@@ -68,7 +68,7 @@ Reglas de React: el loop de render y el bakeo quedan afuera de React. La UI lee 
 ## Cómo está conectado
 
 ```
-ruta /nudos/:slug → KnotScreen → Session (con key por nudo + física)
+ruta /:slug → KnotScreen → Session (con key por nudo + física)
    │  Player.forKnot(knot): datos planos, así la página prerenderizada muestra el paso 1 y la duración
    ▼
 ViewerCanvas se monta → new KnotViewer(canvas) → start(viewer):
@@ -90,9 +90,13 @@ Los cuadros se bakean en un Web Worker mientras el usuario mira; la reproducció
 - `engine/render/ropeMesh.ts` – geometría de soga colchada de tres cordones rearmada alrededor de la línea central en cada cuadro, más puntas cortadas/casquillos. `ropeMaterial.ts` – material y texturas de la soga. `stage.ts` – renderer, cámara, luces, mesa, `createPropMesh`. `viewer.ts` – `KnotViewer`.
 - `app/features/tuner/` – laboratorio de materiales: agregá `?tune` a la página de cualquier nudo para tener sliders sobre `DEFAULT_PHYSICS` (en `rope.ts`); al soltar se escriben los valores en la URL (`&bend=0.01&mass=2.2`), lo que vuelve a bakear el nudo.
 - `/grabador` – el taller de nudos: hacé clic en la soga para ponerle una mano (sostiene hasta que la soltás); con el tiempo frenado, arrastrá los puntos de las manos para planear un movimiento (W/S para la altura), y después Reproducir el movimiento las lleva a todas juntas. Cada mano se graba como una guía (`RopeSim.hands` son las manos en vivo, `RopeSim.save/restore` sostienen un deshacer exacto). Repetir todo vuelve a correr las guías como lo haría el bakeo; Copiar código da un `KnotDef` para emprolijar en `src/engine/knots/`. El estado se guarda en localStorage.
-- `app/shared/site.ts` – `SITE_URL` (el dominio propio; el único lugar donde vive), `knotPath` (por `slug`), `knotImagePath` (por `id`), `STARGAZERS_PATH`.
-- `public/_redirects` – redirecciones 301 desde las URLs viejas en inglés (`/knots/<id>/`, `/stargazers/`, `/recorder`). Un nudo nuevo no necesita entrada acá.
+- `app/shared/site.ts` – `SITE_URL` (dónde se publica el sitio; el único lugar donde vive la dirección), `knotPath` (por `slug`), `knotImagePath` (por `id`), `assetUrl`, `STARGAZERS_PATH`.
+- `public/_redirects` – redirecciones 301 desde las URLs viejas en inglés (`/knots/<id>/`, `/stargazers/`, `/recorder`). Solo las aplica Cloudflare Pages; un nudo nuevo no necesita entrada acá.
 - `wrangler.toml`, `public/_headers` – proyecto de Cloudflare Pages y cacheo de assets.
+
+### Publicar en una subcarpeta (GitHub Pages)
+
+`.github/workflows/pages.yml` buildea con `BASE_PATH=/nudos/` (el nombre del repo) y publica `build/client` en GitHub Pages en cada push a `main`. `BASE_PATH` es la `base` de Vite y el `basename` de React Router; sin definir, el sitio vive en la raíz, que es lo que usan `pnpm dev`, los tests y `pnpm preview`. Los links entre páginas (`<Link>`, `navigate`) suman la subcarpeta solos; un archivo de `public/` usado en el navegador pasa por `assetUrl()`, nunca como `/og/...` pelado. GitHub Pages sirve `404.html` para las rutas desconocidas y no aplica `_redirects`.
 
 ### Layout de varias sogas (importante cuando se toca la simulación)
 

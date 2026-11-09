@@ -25,9 +25,9 @@ const BIG = { width: 1200, height: 900 };
 const WIDE = { "daisy-chain": 1.6 };
 const index = await browser.newPage({ viewport: SMALL });
 await index.goto(base);
-// Las tarjetas del selector enlazan a /nudos/<slug>/ y muestran /og/<id>.jpg: de ahí salen la
+// Las tarjetas del selector enlazan a /<slug>/ y muestran /og/<id>.jpg: de ahí salen la
 // página de cada nudo y el nombre de su imagen.
-const cards = await index.$$eval("dialog a[href^='/nudos/']", (links) =>
+const cards = await index.$$eval("dialog li a", (links) =>
   links.map((a) => ({
     href: new URL(a.href).pathname,
     id: decodeURIComponent(

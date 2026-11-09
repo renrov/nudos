@@ -7,6 +7,7 @@ import {
   isRouteErrorResponse,
 } from "react-router";
 import { SITE_DESCRIPTION, SITE_NAME } from "./shared/site";
+import alegreya from "./styles/fonts/alegreya-latin-wght-normal.woff2?url";
 import archivo from "./styles/fonts/archivo-latin-wght-normal.woff2?url";
 import "./styles/global.css";
 import type { Route } from "./+types/root";
@@ -30,9 +31,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-// La fuente se pide junto con la página, no recién cuando el CSS la encuentra.
+// Las fuentes se piden junto con la página, no recién cuando el CSS las encuentra.
 export const links = () => [
   { rel: "preload", as: "font", type: "font/woff2", href: archivo, crossOrigin: "anonymous" },
+  { rel: "preload", as: "font", type: "font/woff2", href: alegreya, crossOrigin: "anonymous" },
 ];
 
 export const meta = () => [

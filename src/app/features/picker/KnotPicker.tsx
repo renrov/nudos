@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { Link } from "react-router";
 import type { KnotDef } from "../../../engine/knots/types";
-import { knotImagePath, knotPath } from "../../shared/site";
+import { assetUrl, knotImagePath, knotPath } from "../../shared/site";
 import { CloseIcon, MenuIcon } from "../../shared/ui/icons";
 import styles from "./picker.module.css";
 
@@ -46,7 +46,13 @@ export function KnotPicker({ knots, currentId }: { knots: KnotDef[]; currentId: 
                   aria-current={k.id === currentId ? "page" : undefined}
                   onClick={close}
                 >
-                  <img src={knotImagePath(k.id)} alt="" width={1200} height={630} loading="lazy" />
+                  <img
+                    src={assetUrl(knotImagePath(k.id))}
+                    alt=""
+                    width={1200}
+                    height={630}
+                    loading="lazy"
+                  />
                   <strong>{k.name}</strong>
                   <span>{k.summary}</span>
                 </Link>

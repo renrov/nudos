@@ -3,7 +3,9 @@
 // window.renderFrame(i). El tiempo acá es el reloj propio de la película, no el reloj real, así
 // cada cuadro se dibuja exactamente como se pidió.
 import * as THREE from "three";
+import alegreya from "../src/app/styles/fonts/alegreya-latin-wght-normal.woff2?url";
 import archivo from "../src/app/styles/fonts/archivo-latin-wght-normal.woff2?url";
+import { SITE_URL } from "../src/app/shared/site";
 import { knots } from "../src/engine/knots";
 import { Timeline } from "../src/engine/playback/timeline";
 import { createRopeMaterial } from "../src/engine/render/ropeMaterial";
@@ -136,8 +138,13 @@ const INK = "#23201c";
 const MUTED = "#6d665c";
 const ACCENT = "#b9522c";
 const FONT = '"Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
-// Archivo, la fuente del sitio, cargada antes del primer cuadro: el canvas no espera a que llegue.
+/** Alegreya, la fuente de los textos de lectura del sitio: acá, la instrucción de cada paso. */
+const READING = '"Alegreya", Georgia, serif';
+// Las fuentes del sitio, cargadas antes del primer cuadro: el canvas no espera a que lleguen.
 document.fonts.add(await new FontFace("Archivo", `url(${archivo})`, { weight: "100 900" }).load());
+document.fonts.add(
+  await new FontFace("Alegreya", `url(${alegreya})`, { weight: "400 900" }).load(),
+);
 
 const offsets = knot.ropes.map((_, k) => timeline.counts.slice(0, k).reduce((a, b) => a + b, 0));
 const dot = new THREE.Vector3();
@@ -185,7 +192,7 @@ function overlay(v: number, sim: number, positions: Float32Array) {
     ctx.fillStyle = INK;
     ctx.font = `600 ${38 * u}px ${FONT}`;
     ctx.textAlign = "center";
-    ctx.fillText("knots-made-easy.pages.dev", W / 2, H - 70 * u);
+    ctx.fillText(SITE_URL.replace(/^https:\/\//, ""), W / 2, H - 70 * u);
     ctx.textAlign = "left";
   };
 
@@ -235,7 +242,7 @@ function overlay(v: number, sim: number, positions: Float32Array) {
       ctx.font = `600 ${24 * u}px ${FONT}`;
       ctx.fillText(`${i + 1} / ${steps.length}`, W / 2, H - 120 * u);
       ctx.fillStyle = INK;
-      ctx.font = `560 ${40 * u}px ${FONT}`;
+      ctx.font = `560 ${44 * u}px ${READING}`;
       ctx.fillText(steps[i].title, W / 2, H - 70 * u);
     } else address();
     ctx.globalAlpha = 1;

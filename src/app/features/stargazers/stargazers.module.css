@@ -407,6 +407,8 @@
 
 .prompt p {
   margin: 0;
+  font-family: var(--reading);
+  font-size: 17px;
 }
 
 .prompt div {

@@ -25,7 +25,7 @@ export type Band = { top: number; bottom: number };
 const PX = 32;
 const TIP = 5;
 const image = (src: string) => Object.assign(new Image(), { src });
-const picture = (name: string) => `/stargazers/${name}.png`;
+const picture = (name: string) => `${import.meta.env.BASE_URL}stargazers/${name}.png`;
 /** Todas las imágenes que dibuja la soga, así la página puede empezar a cargarlas antes de que arranque la soga. */
 export const PICTURES = ["rope", "tip", ...KNOT_KINDS.map((k) => k.id)].map(picture);
 const AVATAR = 2.4; // radio del avatar, en diámetros de soga: más grande que un nudo, así la gente va primero

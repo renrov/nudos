@@ -39,7 +39,9 @@ export function PlayerBar({
         <span className={styles.stepNum}>
           {s.step + 1}/{steps.length}
         </span>
-        <span aria-live="polite">{steps[s.step].title}</span>
+        <span className={styles.stepTitle} aria-live="polite">
+          {steps[s.step].title}
+        </span>
       </p>
       <div className={styles.bar}>
         <button

@@ -27,6 +27,9 @@ permissions:
 
 jobs:
   rope:
+    # Solo en el repo original, que tiene esos secrets y el sitio en Cloudflare; en este fork se
+    # saltea en lugar de fallar todos los días.
+    if: github.repository == 'behnamazimi/knots'
     runs-on: ubuntu-latest
     steps:
       # main solo acepta pull requests; un token del admin del repo (que puede saltearse la regla) puede pushear.

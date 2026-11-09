@@ -16,6 +16,7 @@ import {
   SITE_NAME,
   STARGAZERS_DATA,
   STARGAZERS_PATH,
+  assetUrl,
   knotImagePath,
   knotPath,
 } from "../shared/site";
@@ -62,7 +63,7 @@ function Session({
 
   return (
     <div className={styles.page} data-clean={clean}>
-      <ViewerCanvas poster={knotImagePath(knot.id)} start={start} onViewer={setViewer} />
+      <ViewerCanvas poster={assetUrl(knotImagePath(knot.id))} start={start} onViewer={setViewer} />
       <header className={styles.top}>
         <KnotPicker knots={knots} currentId={knot.id} />
         <StargazerLink className={styles.stars} to={STARGAZERS_PATH} src={STARGAZERS_DATA} />
@@ -113,6 +114,10 @@ function Session({
         hecho por{" "}
         <a href="https://x.com/baz7c8" target="_blank" rel="noopener">
           @baz7c8
+        </a>
+        {" · "}traducido por{" "}
+        <a href="https://github.com/renrov" target="_blank" rel="noopener">
+          @renrov
         </a>
       </footer>
     </div>

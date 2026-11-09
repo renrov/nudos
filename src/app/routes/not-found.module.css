@@ -11,6 +11,11 @@
   font-size: 28px;
 }
 
+.page p {
+  font-family: var(--reading);
+  font-size: 18px;
+}
+
 .page a {
   color: var(--accent);
 }

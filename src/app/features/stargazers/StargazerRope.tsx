@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { Link } from "react-router";
 import { useMountEffect } from "../../shared/hooks";
 import { knotPath } from "../../shared/site";
 import { PauseIcon, PlayIcon, SearchIcon } from "../../shared/ui/icons";
@@ -252,9 +253,9 @@ export function StargazerRope({ src, repoUrl }: { src: string; repoUrl: string }
               <br />
               {day(hit.starred_at)}
             </span>
-            <a className={styles.learn} href={knotPath(knotFor(hit.user.id))}>
+            <Link className={styles.learn} to={knotPath(knotFor(hit.user.id))}>
               {knotLine(hit)} <b>Aprendelo →</b>
-            </a>
+            </Link>
           </div>
         )}
         {found === "missing" && (
