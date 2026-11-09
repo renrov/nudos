@@ -93,6 +93,7 @@ Los cuadros se bakean en un Web Worker mientras el usuario mira; la reproducció
 - `app/shared/site.ts` – `SITE_URL` (dónde se publica el sitio; el único lugar donde vive la dirección), `knotPath` (por `slug`), `knotImagePath` (por `id`), `assetUrl`, `STARGAZERS_PATH`.
 - `public/_redirects` – redirecciones 301 desde las URLs viejas en inglés (`/knots/<id>/`, `/stargazers/`, `/recorder`). Solo las aplica Cloudflare Pages; un nudo nuevo no necesita entrada acá.
 - `wrangler.toml`, `public/_headers` – proyecto de Cloudflare Pages y cacheo de assets.
+- `public/favicon.svg`, `favicon.ico`, `apple-touch-icon.png` – la N de Archivo (peso 800, como contorno) en blanco sobre el rojo del sitio; se enlazan en `root.tsx`.
 
 ### Publicar en una subcarpeta (GitHub Pages)
 

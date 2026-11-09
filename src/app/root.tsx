@@ -6,7 +6,7 @@ import {
   ScrollRestoration,
   isRouteErrorResponse,
 } from "react-router";
-import { SITE_DESCRIPTION, SITE_NAME } from "./shared/site";
+import { SITE_DESCRIPTION, SITE_NAME, assetUrl } from "./shared/site";
 import alegreya from "./styles/fonts/alegreya-latin-wght-normal.woff2?url";
 import archivo from "./styles/fonts/archivo-latin-wght-normal.woff2?url";
 import "./styles/global.css";
@@ -35,6 +35,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export const links = () => [
   { rel: "preload", as: "font", type: "font/woff2", href: archivo, crossOrigin: "anonymous" },
   { rel: "preload", as: "font", type: "font/woff2", href: alegreya, crossOrigin: "anonymous" },
+  // La N de Archivo: el .ico para los navegadores que no leen SVG, y la de iOS sin esquinas redondeadas.
+  { rel: "icon", href: assetUrl("/favicon.ico"), sizes: "32x32" },
+  { rel: "icon", href: assetUrl("/favicon.svg"), type: "image/svg+xml" },
+  { rel: "apple-touch-icon", href: assetUrl("/apple-touch-icon.png") },
 ];
 
 export const meta = () => [
