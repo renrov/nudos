@@ -92,7 +92,7 @@
 
 .ticks button {
   position: absolute;
-  z-index: 1; /* above the invisible range, so ticks stay clickable */
+  z-index: 1; /* por encima del range invisible, así las marcas siguen siendo clickeables */
   top: 12px;
   width: 16px;
   height: 16px;
@@ -203,7 +203,7 @@
   }
 }
 
-/* Matches the reset-view button beside it. */
+/* Hace juego con el botón de restablecer vista que tiene al lado. */
 .shareWrap {
   position: relative;
   flex: none;
@@ -233,7 +233,7 @@
   pointer-events: none;
 }
 
-/* On the narrowest phones the timecode makes way, so the buttons stay on one row. */
+/* En los celulares más angostos el contador de tiempo deja lugar, así los botones quedan en una fila. */
 @media (max-width: 350px) {
   .clock {
     display: none;

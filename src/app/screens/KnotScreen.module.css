@@ -90,7 +90,7 @@
   color: var(--accent);
 }
 
-/* Hide-controls mode: everything but the hide button fades out and stops taking clicks. */
+/* Modo sin controles: todo menos el botón de ocultar se desvanece y deja de recibir clics. */
 .chrome,
 .top > :not(.hide) {
   transition:
@@ -115,7 +115,7 @@
   opacity: 0.45;
 }
 
-/* Narrow phones: tighter header so "All knots" and the stargazer pill stay on one line. */
+/* Celulares angostos: header más apretado, así "Todos los nudos" y la pastilla de estrellas quedan en una línea. */
 @media (max-width: 360px) {
   .top {
     left: 12px;

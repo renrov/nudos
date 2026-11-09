@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 import { formatKnot, knotOf, toGuide } from "./recording";
 
-test("a track becomes a guide: still keys collapse to one bare hold, and it lets go at release", () => {
+test("un recorrido se vuelve una guía: las keys quietas se juntan en una sola espera, y suelta en el release", () => {
   const guide = toGuide(
     {
       rope: 0,
@@ -26,7 +26,7 @@ test("a track becomes a guide: still keys collapse to one bare hold, and it lets
       { t: 1.7 },
     ],
   });
-  const knot = knotOf({ preset: "Bight", guides: [guide], steps: [] });
+  const knot = knotOf({ preset: "Seno", guides: [guide], steps: [] });
   expect(knot.duration).toBe(2.3);
   expect(formatKnot(knot)).toContain("{ t: 1.3 }");
 });

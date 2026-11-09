@@ -1,20 +1,21 @@
 import type { KnotDef } from "./types";
 
-// The rope lies along x from -0.55 (standing end) to 1.25 (working end); the camera looks from +z.
-// On screen, +z is the near side and -z the far side. A point starts at x = at * 1.8 - 0.55.
-// Layout (top view): the small loop (lobe, radius 0.06) is centred at (-0.01, 0), so the knot sits mid-scene; the standing part
-// comes in from the left and the eye side crosses over it at (-0.08, 0). The eye lies to the right,
-// its near leg at z = 0.09, and the tail goes up through the lobe, round the standing part at x = -0.14
-// and back down through the lobe.
+// La soga está tendida a lo largo de x, de -0.55 (extremo fijo) a 1.25 (punta); la cámara mira desde +z.
+// En pantalla, +z es el lado cercano y -z el lado lejano. Un punto arranca en x = at * 1.8 - 0.55.
+// Layout (vista de arriba): el bucle chico (lóbulo, radio 0.06) está centrado en (-0.01, 0), así el
+// nudo queda en el medio de la escena; la parte fija entra desde la izquierda y el lado de la gaza
+// la cruza por encima en (-0.08, 0). La gaza queda a la derecha, con su pata cercana en z = 0.09, y
+// la cola sube por el lóbulo, rodea la parte fija en x = -0.14 y vuelve a bajar por el lóbulo.
 const R = 0.012;
 const LENGTH = 1.8;
-const LIFT = 0.06; // a strand held up so the end can pass under it
+const LIFT = 0.06; // un tramo levantado para que la punta pueda pasar por debajo
 
 export const bowline: KnotDef = {
   id: "bowline",
-  name: "Bowline",
+  slug: "as-de-guia",
+  name: "As de guía",
   summary:
-    "A fixed loop at the end of a rope that will not slip or jam, and unties easily after a load.",
+    "Una gaza fija en la punta de la soga que no se corre ni se traba, y se desata fácil después de aguantar carga.",
   ropes: [
     {
       length: LENGTH,
@@ -27,39 +28,40 @@ export const bowline: KnotDef = {
   ],
   duration: 18,
   steps: [
-    { t: 0, title: "Lay the rope out straight" },
-    { t: 0.4, title: "Make a small loop, with the working side on top" },
-    { t: 3.4, title: "Swing the end round to form the eye" },
-    { t: 7, title: "Up through the small loop from underneath" },
-    { t: 9.6, title: "Round behind the standing part" },
-    { t: 11.9, title: "Back down through the small loop" },
-    { t: 14.5, title: "Hold the tail against the eye, pull the standing part" },
-    { t: 17.4, title: "Done: a bowline" },
+    { t: 0, title: "Estirá la soga en línea recta" },
+    { t: 0.4, title: "Hacé un bucle chico, con el lado de la punta arriba" },
+    { t: 3.4, title: "Llevá la punta en redondo para formar la gaza" },
+    { t: 7, title: "Subila por el bucle chico desde abajo" },
+    { t: 9.6, title: "Rodeá la parte fija por detrás" },
+    { t: 11.9, title: "Volvé a bajar por el bucle chico" },
+    { t: 14.5, title: "Sostené la cola contra la gaza y tirá de la parte fija" },
+    { t: 17.4, title: "Listo: un as de guía" },
   ],
   guides: [
-    // Holds the standing part down; once the end is round it, pulling the end would swing it about.
+    // Sujeta la parte fija contra la mesa; una vez que la punta la rodeó, tirar de la punta la
+    // haría girar para cualquier lado.
     { at: 0.06, grab: 0.4, path: [{ t: 14.9 }] },
 
-    // The small loop. These hold it in place until the pull has taken over.
+    // El bucle chico. Estos lo sostienen en su lugar hasta que el tirón toma el control.
     {
-      at: 0.175, // standing side of the crossing
+      at: 0.175, // lado fijo del cruce
       grab: 0.4,
       path: [{ t: 1.4, p: [-0.067, R, 0.01] }, { t: 14.9 }],
     },
     {
-      at: 0.22, // near side of the loop
+      at: 0.22, // lado cercano del bucle
       grab: 0.6,
       path: [{ t: 1.6, p: [-0.01, 0.03, 0.06] }, { t: 2.2, p: [-0.01, R, 0.06] }, { t: 3.4 }],
     },
     {
-      at: 0.272, // right of the loop, where the end passes under it: lifted for the way up and the way down
+      at: 0.272, // derecha del bucle, donde la punta pasa por debajo: se levanta para la subida y para la bajada
       grab: 0.8,
       path: [
         { t: 1.8, p: [0.05, 0.03, 0] },
         { t: 2.4, p: [0.05, R, 0] },
         { t: 7.2 },
         { t: 7.6, p: [0.05, LIFT, 0] },
-        { t: 8.5 }, // the end is under it and in the hole
+        { t: 8.5 }, // la punta está debajo y adentro del agujero
         { t: 8.9, p: [0.05, R, 0] },
         { t: 13.2 },
         { t: 13.6, p: [0.05, LIFT, 0] },
@@ -69,12 +71,12 @@ export const bowline: KnotDef = {
       ],
     },
     {
-      at: 0.324, // far side of the loop
+      at: 0.324, // lado lejano del bucle
       grab: 1.0,
       path: [{ t: 2.0, p: [0, 0.03, -0.06] }, { t: 2.6, p: [-0.012, R, -0.06] }, { t: 3.4 }],
     },
     {
-      at: 0.379, // the hand: lays the eye side over the standing part
+      at: 0.379, // la mano: apoya el lado de la gaza sobre la parte fija
       grab: 1.2,
       path: [
         { t: 2.0, p: [0.05, 0.05, -0.1] },
@@ -84,12 +86,12 @@ export const bowline: KnotDef = {
       ],
     },
     {
-      at: 0.446, // start of the eye, beside the near side of the loop
+      at: 0.446, // inicio de la gaza, al lado del lado cercano del bucle
       grab: 1.4,
       path: [{ t: 2.4, p: [0.1, 0.03, 0.13] }, { t: 3.1, p: [-0.036, R, 0.095] }, { t: 6.6 }],
     },
 
-    // The eye: the end swings round on the far side, and its fold is laid out to the right.
+    // La gaza: la punta gira por el lado lejano y su pliegue se tiende hacia la derecha.
     {
       at: 0.732,
       grab: 4.0,
@@ -98,52 +100,55 @@ export const bowline: KnotDef = {
     {
       at: 1,
       grab: 3.4,
-      force: 35, // lifting the end and the rope trailing on the table; lighter, it lags and then whips
+      force: 35, // levanta la punta y la soga que se arrastra por la mesa; más liviana, se atrasa y después latiguea
       path: [
         { t: 4.2, p: [0.8, 0.05, -0.1] },
         { t: 5.0, p: [0.5, 0.05, -0.17] },
         { t: 5.8, p: [0.2, 0.04, -0.11] },
         { t: 6.4, p: [0.09, R, -0.04] },
 
-        // Up through the loop: in under its lifted right side along the table to the middle of the
-        // hole (loop centre about (-0.02, 0)), up out of it, then over its far side by the crossing.
+        // Hacia arriba por el bucle: entra por debajo de su lado derecho levantado, por la mesa,
+        // hasta el medio del agujero (centro del bucle cerca de (-0.02, 0)), sale hacia arriba y
+        // después pasa por encima de su lado lejano, junto al cruce.
         { t: 7.7, p: [0.1, R, -0.01] },
         { t: 8.1, p: [0.05, R, -0.01] },
         { t: 8.5, p: [-0.015, R, 0] },
         { t: 8.9, p: [-0.03, 0.05, -0.02] },
         { t: 9.2, p: [-0.07, 0.045, -0.045] },
-        { t: 9.6, p: [-0.22, R, -0.13] }, // draw plenty of tail through, or it springs back out
+        { t: 9.6, p: [-0.22, R, -0.13] }, // pasar bastante cola, si no vuelve a salirse
 
-        // Round behind the standing part, far side to near side.
+        // Por detrás de la parte fija, del lado lejano al lado cercano.
         { t: 10.1, p: [-0.16, R, -0.05] },
         { t: 10.5, p: [-0.15, R, 0] },
         { t: 10.9, p: [-0.16, R, 0.06] },
         { t: 11.3, p: [-0.21, R, 0.17] },
-        { t: 11.9, p: [-0.27, R, 0.32] }, // enough tail past the standing part to go back through
+        { t: 11.9, p: [-0.27, R, 0.32] }, // cola suficiente pasada la parte fija para volver a pasar
 
-        // Back down through the loop: over the crossing strands, straight down into the hole beside the
-        // strand that came up (the loaded loop shrinks to about (-0.01, -0.01), radius 0.045, so aim
-        // at its middle, not its rim), then under the lifted right side.
+        // Hacia abajo por el bucle: por encima de los tramos del cruce, derecho hacia abajo al
+        // agujero al lado del tramo que subió (con carga, el bucle se achica a más o menos (-0.01,
+        // -0.01), radio 0.045, así que hay que apuntar al medio, no al borde), y después por debajo
+        // del lado derecho levantado.
         { t: 12.5, p: [-0.17, 0.045, 0.15] },
         { t: 12.9, p: [-0.1, 0.05, 0.06] },
         { t: 13.3, p: [-0.03, 0.065, 0] },
         { t: 13.6, p: [0.01, 0.035, -0.005] },
         { t: 13.9, p: [0.02, R, -0.005] },
         { t: 14.2, p: [0.08, R, 0] },
-        { t: 14.5, p: [0.27, R, 0.0] }, // well into the eye, so a good tail is left
-        { t: 14.8 }, // hold until the pull takes the end
+        { t: 14.5, p: [0.27, R, 0.0] }, // bien adentro de la gaza, así queda una buena cola
+        { t: 14.8 }, // sostener hasta que el tirón agarra la punta
       ],
     },
     {
-      at: 0.135, // the standing part lifts so the end can pass under it
+      at: 0.135, // la parte fija se levanta para que la punta pase por debajo
       grab: 9.6,
       path: [{ t: 10.0, p: [-0.15, LIFT, 0] }, { t: 11.8 }, { t: 12.1, p: [-0.15, R, 0] }],
     },
 
-    // Pull the standing part against the eye and the tail. Both sides of the eye are held apart on the
-    // table, so the knot cannot roll onto its side; one pull at the far end of the eye twisted it up.
-    // Then each hand eases back to where its rope is before letting go: dropped at full pull, the
-    // stiff rope springs the knot open.
+    // Tirar de la parte fija contra la gaza y la cola. Los dos lados de la gaza se sostienen
+    // separados sobre la mesa, así el nudo no puede volcarse de costado; un solo tirón en la punta
+    // lejana de la gaza lo retorcía.
+    // Después cada mano vuelve suave a donde está su soga antes de soltar: si se suelta en pleno
+    // tirón, la soga rígida abre el nudo de un latigazo.
     {
       at: 0,
       grab: 14.5,
@@ -152,7 +157,7 @@ export const bowline: KnotDef = {
       path: [{ t: 15.9, p: [-0.8, R, 0] }, { t: 16.3 }, { t: 16.8, p: [-0.48, R, 0] }, { t: 17.2 }],
     },
     {
-      at: 0.54, // near side of the eye
+      at: 0.54, // lado cercano de la gaza
       grab: 14.5,
       compliance: 0.001,
       force: 55,
@@ -164,7 +169,7 @@ export const bowline: KnotDef = {
       ],
     },
     {
-      at: 0.656, // far side of the eye
+      at: 0.656, // lado lejano de la gaza
       grab: 14.5,
       compliance: 0.001,
       force: 55,

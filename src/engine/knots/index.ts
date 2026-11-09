@@ -9,7 +9,7 @@ import { squareKnot } from "./square-knot";
 import type { KnotDef } from "./types";
 import { zeppelin } from "./zeppelin";
 
-/** Every knot in the app, in menu order. Add new knots here. */
+/** Todos los nudos de la app, en el orden del menú. Agregá los nudos nuevos acá. */
 export const knots: KnotDef[] = [
   overhand,
   slipKnot,

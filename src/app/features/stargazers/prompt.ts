@@ -1,8 +1,8 @@
 const KEY = "stargazer-prompt-seen";
-// Where storage is blocked, remember for this page load only.
+// Donde el almacenamiento está bloqueado, recordarlo solo durante esta carga de la página.
 let seenHere = false;
 
-/** Whether the stargazer prompt was shown, or the stargazer page visited, on this device. */
+/** Si el aviso de estrellas ya se mostró, o si se visitó la página de estrellas, en este dispositivo. */
 export function promptSeen() {
   try {
     return seenHere || localStorage.getItem(KEY) === "1";
@@ -16,6 +16,6 @@ export function markPromptSeen() {
   try {
     localStorage.setItem(KEY, "1");
   } catch {
-    // Blocked storage: the module flag above has to do.
+    // Almacenamiento bloqueado: alcanza con la bandera del módulo de arriba.
   }
 }

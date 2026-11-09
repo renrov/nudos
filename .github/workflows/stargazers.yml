@@ -1,9 +1,12 @@
-# Ties a knot on the stargazer rope for every new GitHub star: refreshes public/stargazers.json,
-# redraws the README's rope (.github/stargazer-rope-<hash>.svg, a new file name each time so
-# GitHub doesn't show a cached one, linked from README.md), deploys the site to Cloudflare Pages and commits all three.
-# Runs when someone stars the repo, and once a day to catch anything a star event missed.
-# Needs repository secrets CLOUDFLARE_API_TOKEN (Pages: Edit), CLOUDFLARE_ACCOUNT_ID and PUSH_TOKEN
-# (a fine-grained personal access token of the repo admin, with Contents: read and write on this repo).
+# Ata un nudo en la soga de estrellas por cada estrella nueva en GitHub: actualiza
+# public/stargazers.json, vuelve a dibujar la soga del README (.github/stargazer-rope-<hash>.svg,
+# con un nombre de archivo nuevo cada vez para que GitHub no muestre uno cacheado, enlazado desde
+# README.md), despliega el sitio en Cloudflare Pages y commitea las tres cosas.
+# Corre cuando alguien le da estrella al repo, y una vez por día para agarrar lo que se haya perdido
+# algún evento de estrella.
+# Necesita los secrets del repositorio CLOUDFLARE_API_TOKEN (Pages: Edit), CLOUDFLARE_ACCOUNT_ID y
+# PUSH_TOKEN (un token de acceso personal fine-grained del admin del repo, con Contents: read and
+# write sobre este repo).
 name: Stargazers
 
 on:
@@ -13,7 +16,8 @@ on:
     - cron: "17 4 * * *"
   workflow_dispatch:
 
-# One run at a time; stars that land mid-run queue a single follow-up run that picks them all up.
+# Una corrida a la vez; las estrellas que caen en medio de una corrida encolan una sola corrida más
+# que las levanta a todas.
 concurrency:
   group: stargazers
   cancel-in-progress: false
@@ -25,7 +29,7 @@ jobs:
   rope:
     runs-on: ubuntu-latest
     steps:
-      # main only takes pull requests; a token owned by the repo admin (who may bypass the rule) can push.
+      # main solo acepta pull requests; un token del admin del repo (que puede saltearse la regla) puede pushear.
       - uses: actions/checkout@v7
         with:
           token: ${{ secrets.PUSH_TOKEN }}
@@ -57,7 +61,8 @@ jobs:
         name: Redraw the README rope
         run: node tools/readme-rope.mjs
 
-      # Deploy before committing: if the push fails, the next run still sees the change and redeploys.
+      # Desplegar antes de commitear: si el push falla, la próxima corrida igual ve el cambio y
+      # vuelve a desplegar.
       - if: steps.feed.outputs.changed
         name: Deploy
         run: pnpm deploy:pages
@@ -71,6 +76,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A public/stargazers.json .github README.md
-          git commit -m "Tie the latest stargazer knots"
+          git commit -m "Atar los nudos de las últimas estrellas"
           git pull --rebase
           git push

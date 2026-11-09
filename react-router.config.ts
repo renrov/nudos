@@ -5,11 +5,12 @@ import { STARGAZERS_PATH, knotPath } from "./src/app/shared/site";
 
 export default {
   appDirectory: "src/app",
-  // A static site: every knot page is prerendered to HTML, then runs as a client-side app.
+  // Un sitio estático: cada página de nudo se prerenderiza a HTML y después corre como app del lado del cliente.
   ssr: false,
-  prerender: ["/", STARGAZERS_PATH, ...knots.map((k) => knotPath(k.id))],
+  prerender: ["/", STARGAZERS_PATH, ...knots.map(knotPath)],
   async buildEnd({ reactRouterConfig: { buildDirectory } }) {
-    // Hosts serve 404.html for unknown paths; the SPA shell then shows the not-found page.
+    // Los hosts sirven 404.html para las rutas desconocidas; después el shell de la SPA muestra la
+    // página de no encontrado.
     await copyFile(
       `${buildDirectory}/client/__spa-fallback.html`,
       `${buildDirectory}/client/404.html`,

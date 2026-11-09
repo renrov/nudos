@@ -1,19 +1,20 @@
 import type { Guide, KnotDef } from "./types";
 
-// The rope lies along x from -0.55 (left end) to 2.95 (working end); the camera looks from +z.
-// Points are named by their distance from the left end, `A(s)`, so a point starts at x = s - 0.55.
-// The left tail stays where it is and no hand touches the working end until the lock: every link
-// is a bight of the long part pulled up through the last loop, so the long part slides in as the
-// chain uses it up.
+// La soga está tendida a lo largo de x, de -0.55 (extremo izquierdo) a 2.95 (punta); la cámara mira desde +z.
+// Los puntos se nombran por su distancia al extremo izquierdo, `A(s)`, así un punto arranca en x = s - 0.55.
+// La cola izquierda se queda donde está y ninguna mano toca la punta hasta el cierre: cada eslabón
+// es un seno de la parte larga que se pasa hacia arriba por el último bucle, así la parte larga se
+// va deslizando a medida que la cadena la consume.
 const R = 0.012;
-const L = 3.5; // long: the noose and every link use up rope, and the end must still reach back for the lock
+const L = 3.5; // larga: el lazo y cada eslabón consumen soga, y la punta igual tiene que llegar de vuelta para el cierre
 const A = (s: number) => s / L;
-const Z = 0.04; // the rope lies a little toward the camera, to leave room for loops behind it
+const Z = 0.04; // la soga queda un poco hacia la cámara, para dejar lugar a los bucles de atrás
 
 /**
- * One link, starting at time `t`: two hands open the last loop (its end at x, `tip` metres from the
- * left end) by its sides, and one hand pulls a bight of the long part (`next` metres from the left
- * end) under it, up through it and lays it on along the rope, then holds it up as the next loop.
+ * Un eslabón, que arranca en el tiempo `t`: dos manos abren el último bucle (su extremo en x, a
+ * `tip` metros del extremo izquierdo) por los costados, y una mano pasa un seno de la parte larga
+ * (a `next` metros del extremo izquierdo) por debajo, hacia arriba por adentro, lo apoya a lo largo
+ * de la soga y después lo sostiene levantado como el próximo bucle.
  */
 function link(
   t: number,
@@ -23,7 +24,7 @@ function link(
   side = 0.06,
   back = 0.05,
   reach = 0.12,
-  release = t + 6.4, // the new loop is held up until the next link (or the lock) has gone through it
+  release = t + 6.4, // el bucle nuevo se sostiene levantado hasta que pasa el próximo eslabón (o el cierre)
 ): Guide[] {
   const open = (side: number, dz: number): Guide => ({
     at: A(tip + side),
@@ -35,7 +36,7 @@ function link(
     open(-side, -0.04),
     open(side, 0.04),
     {
-      // Moved slowly: the long part slides in behind it, and a fast pull whips it.
+      // Se mueve despacio: la parte larga se desliza detrás, y un tirón rápido la hace latiguear.
       at: A(next),
       grab: t + 0.5,
       force: 150,
@@ -55,9 +56,10 @@ function link(
 
 export const daisyChain: KnotDef = {
   id: "daisy-chain",
-  name: "Daisy chain",
+  slug: "cadeneta",
+  name: "Cadeneta",
   summary:
-    "A chain of loops, each pulled through the last. Shortens a long rope for storage and comes undone with one pull once the end is freed.",
+    "Una cadena de bucles, cada uno pasado por el anterior. Acorta una soga larga para guardarla y se deshace de un tirón cuando soltás la punta.",
   ropes: [
     {
       length: L,
@@ -70,21 +72,24 @@ export const daisyChain: KnotDef = {
   ],
   duration: 32,
   steps: [
-    { t: 0, title: "Lay the rope out straight" },
-    { t: 0.4, title: "Make a loop" },
+    { t: 0, title: "Estirá la soga en línea recta" },
+    { t: 0.4, title: "Hacé un bucle" },
     {
       t: 3.9,
-      title: "Lay a bight of the long part over the loop and tuck it out under the far side",
+      title: "Apoyá un seno de la parte larga sobre el bucle y sacalo por debajo del lado lejano",
     },
-    { t: 5.6, title: "Pull the short end to close the noose" },
-    { t: 6.8, title: "Turn the bight to point along the rope" },
-    { t: 8.4, title: "Pull a bight of the long part up through the loop" },
-    { t: 12.1, title: "Repeat: pull the next bight up through the newest loop" },
-    { t: 26.6, title: "Pass the end through the last loop to lock the chain" },
-    { t: 30.6, title: "Done: a daisy chain. Free the end and pull it to undo the chain" },
+    { t: 5.6, title: "Tirá de la punta corta para cerrar el lazo" },
+    { t: 6.8, title: "Girá el seno para que apunte a lo largo de la soga" },
+    { t: 8.4, title: "Pasá un seno de la parte larga hacia arriba por el bucle" },
+    { t: 12.1, title: "Repetí: pasá el siguiente seno hacia arriba por el bucle más nuevo" },
+    { t: 26.6, title: "Pasá la punta por el último bucle para trabar la cadena" },
+    {
+      t: 30.6,
+      title: "Listo: una cadeneta. Soltá la punta y tirá de ella para deshacer la cadena",
+    },
   ],
   guides: [
-    // Hold the rope where the loop will cross, and lift it a little so the other side can pass under.
+    // Sostener la soga donde se va a cruzar el bucle, y levantarla un poco para que el otro lado pase por debajo.
     {
       at: A(0.399),
       grab: 0.4,
@@ -95,9 +100,9 @@ export const daisyChain: KnotDef = {
         { t: 3.7, p: [-0.15, R, Z] },
       ],
     },
-    // Pull the middle of the loop back into a U; the long part slides in to feed it.
+    // Llevar el medio del bucle hacia atrás formando una U; la parte larga se desliza para alimentarla.
     { at: A(0.601), grab: 0.4, path: [{ t: 1.4, p: [-0.1, R, -0.07] }, { t: 3.7 }] },
-    // Carry the right side of the U left, under the lifted rope, to close the loop.
+    // Llevar el lado derecho de la U hacia la izquierda, por debajo de la soga levantada, para cerrar el bucle.
     {
       at: A(0.811),
       grab: 1.4,
@@ -110,8 +115,8 @@ export const daisyChain: KnotDef = {
       ],
     },
 
-    // The noose: lay a bight of the long part over the near side of the loop and tuck it out under
-    // the far side, which one hand lifts.
+    // El lazo: apoyar un seno de la parte larga sobre el lado cercano del bucle y sacarlo por
+    // debajo del lado lejano, que levanta una mano.
     {
       at: A(0.63),
       grab: 4.3,
@@ -135,7 +140,8 @@ export const daisyChain: KnotDef = {
         { t: 11.6 },
       ],
     },
-    // Close the noose: pull the short end while the bight stays put; the long part feeds the bight.
+    // Cerrar el lazo: tirar de la punta corta mientras el seno se queda quieto; la parte larga
+    // alimenta el seno.
     {
       at: A(0.273),
       grab: 3.9,
@@ -143,7 +149,7 @@ export const daisyChain: KnotDef = {
       compliance: 0.001,
       path: [{ t: 5.6 }, { t: 6.8, p: [-0.45, R, Z] }, { t: 7.0 }],
     },
-    // Hold the short end while the chain is made, or each pull drags the knot along.
+    // Sostener la punta corta mientras se arma la cadena, si no cada tirón arrastra el nudo.
     { at: A(0.273), grab: 7.0, force: 400, path: [{ t: 31 }] },
 
     ...link(8.4, -0.02, 1.071, 1.43, 0.063, 0.06),
@@ -152,8 +158,8 @@ export const daisyChain: KnotDef = {
     ...link(19.5, 0.26, 2.15, 2.57, 0.06, 0.05, 0.16),
     ...link(23.2, 0.4, 2.57, 2.99, 0.06, 0.05, 0.16, 28.7),
 
-    // The lock: open the last loop and pass the end itself through it, as the links did a bight.
-    // Once the end is up through, every hand on the loop lets go and the end is drawn right through.
+    // El cierre: abrir el último bucle y pasar la punta misma por él, como los eslabones pasaban un seno.
+    // Una vez que la punta subió, todas las manos del bucle sueltan y la punta se termina de pasar.
     {
       at: A(2.99 - 0.06),
       grab: 26.6,

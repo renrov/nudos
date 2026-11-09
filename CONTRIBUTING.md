@@ -1,8 +1,8 @@
-# Contributing
+# Cómo contribuir
 
-Run `pnpm dev` to see your change. Before opening a PR, run `pnpm typecheck`, `pnpm lint`, `pnpm format` and `pnpm test`. CI runs the same checks and a build.
+Corré `pnpm dev` para ver tu cambio. Antes de abrir un PR, corré `pnpm typecheck`, `pnpm lint`, `pnpm format` y `pnpm test`. La CI corre los mismos chequeos y un build.
 
-- A new knot is only a `KnotDef` in `src/engine/knots/`, with no knot-specific engine code. `AGENTS.md` has the rules for authoring one.
-- The bake fingerprint test fails if a change alters how a knot ties. If that's on purpose, say why in the PR.
-- Performance changes: include before and after numbers.
-- Look at visual changes in the browser. No test covers how it looks.
+- Un nudo nuevo es solo un `KnotDef` en `src/engine/knots/`, sin código del motor específico para ese nudo. `AGENTS.md` tiene las reglas para escribir uno.
+- El test de huella del bakeo falla si un cambio altera cómo se ata un nudo. Si es a propósito, explicá por qué en el PR.
+- Cambios de rendimiento: incluí los números de antes y después.
+- Mirá los cambios visuales en el navegador. Ningún test cubre cómo se ve.

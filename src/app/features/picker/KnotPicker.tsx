@@ -5,7 +5,7 @@ import { knotImagePath, knotPath } from "../../shared/site";
 import { CloseIcon, MenuIcon } from "../../shared/ui/icons";
 import styles from "./picker.module.css";
 
-/** The "All knots" button and its sheet: a grid of cards, each a link to a knot's page. */
+/** El botón "Todos los nudos" y su hoja: una grilla de tarjetas, cada una con link a la página de un nudo. */
 export function KnotPicker({ knots, currentId }: { knots: KnotDef[]; currentId: string }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const close = () => dialog.current?.close();
@@ -19,21 +19,21 @@ export function KnotPicker({ knots, currentId }: { knots: KnotDef[]; currentId: 
         onClick={() => dialog.current?.showModal()}
       >
         <MenuIcon />
-        All knots
+        Todos los nudos
       </button>
       <dialog
         ref={dialog}
         className={styles.dialog}
         aria-labelledby="picker-title"
-        // The sheet fills the dialog, so a click on the dialog itself is a click on the backdrop.
+        // La hoja ocupa todo el diálogo, así que un clic en el diálogo mismo es un clic en el fondo.
         onClick={(e) => {
           if (e.target === e.currentTarget) close();
         }}
       >
         <div className={styles.sheet}>
           <div className={styles.head}>
-            <h2 id="picker-title">Pick a knot</h2>
-            <button type="button" className={styles.close} aria-label="Close" onClick={close}>
+            <h2 id="picker-title">Elegí un nudo</h2>
+            <button type="button" className={styles.close} aria-label="Cerrar" onClick={close}>
               <CloseIcon />
             </button>
           </div>
@@ -41,7 +41,7 @@ export function KnotPicker({ knots, currentId }: { knots: KnotDef[]; currentId: 
             {knots.map((k) => (
               <li key={k.id}>
                 <Link
-                  to={knotPath(k.id)}
+                  to={knotPath(k)}
                   className={styles.card}
                   aria-current={k.id === currentId ? "page" : undefined}
                   onClick={close}

@@ -7,9 +7,9 @@ import { createPropMesh, createStage, type Stage } from "./stage";
 export const NATURAL_ROPE = "#c39f6a";
 
 /**
- * Draws a knot session on a canvas: owns the three.js stage and the render loop, ticks the
- * session's player and redraws only when the rope or the view changed. Show another session to
- * switch knots.
+ * Dibuja una sesión de nudo en un canvas: es dueño del stage de three.js y del loop de render,
+ * avanza el player de la sesión y solo vuelve a dibujar cuando cambió la soga o la vista. Mostrá
+ * otra sesión para cambiar de nudo.
  */
 export class KnotViewer {
   private readonly stage: Stage;
@@ -19,7 +19,7 @@ export class KnotViewer {
   private ropes: RopeMesh[] = [];
   private props: THREE.Mesh[] = [];
   private firstDraw: (() => void) | null = null;
-  /** Time of the frame the ropes show; NaN until the session's first frame is built. */
+  /** Tiempo del cuadro que muestran las sogas; NaN hasta que se arma el primer cuadro de la sesión. */
   private shownTime = NaN;
 
   constructor(canvas: HTMLCanvasElement) {
@@ -27,7 +27,7 @@ export class KnotViewer {
     this.stage.renderer.setAnimationLoop((now) => this.frame(now));
   }
 
-  /** Replaces what is shown; the previous session stays the caller's to dispose. */
+  /** Reemplaza lo que se muestra; la sesión anterior la sigue liberando quien llama. */
   show(session: KnotSession, onFirstDraw?: () => void) {
     this.clear();
     this.session = session;
@@ -69,8 +69,9 @@ export class KnotViewer {
     if (session) {
       session.player.tick(this.clock.getDelta());
       const { timeline } = session;
-      // Clamped as sample() clamps it: while playback waits at the bake edge, the drawn frame
-      // still moves as the edge does. Baked frames never change, so the same time is the same rope.
+      // Limitado igual que lo limita sample(): mientras la reproducción espera en el borde del bakeo,
+      // el cuadro dibujado sigue moviéndose con el borde. Los cuadros bakeados nunca cambian, así que
+      // el mismo tiempo es la misma soga.
       const time = Math.min(Math.max(session.player.getSnapshot().time, 0), timeline.ready);
       if (time !== this.shownTime) {
         this.shownTime = time;
@@ -91,7 +92,10 @@ export class KnotViewer {
     }
   }
 
-  /** Removes the shown ropes and props and frees what is theirs; rope materials are shared and kept. */
+  /**
+   * Saca las sogas y los props que se muestran y libera lo que es de ellos; los materiales de soga
+   * se comparten y se conservan.
+   */
   private clear() {
     const shared = new Set(this.materials.values());
     for (const object of [...this.ropes, ...this.props]) {

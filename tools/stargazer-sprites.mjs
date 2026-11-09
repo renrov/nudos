@@ -1,5 +1,6 @@
-// Saves the stargazer rope's pictures (real rope strip, rope end, each finished knot) to
-// public/stargazers/. Run: node tools/stargazer-sprites.mjs. Rerun after changing how rope looks.
+// Guarda las imágenes de la soga de estrellas (tira de soga real, punta de la soga, cada nudo
+// terminado) en public/stargazers/. Correr: node tools/stargazer-sprites.mjs. Volver a correrlo
+// después de cambiar cómo se ve la soga.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium } from "@playwright/test";
 import { createServer } from "vite";
@@ -14,7 +15,7 @@ await server.listen();
 const browser = await chromium.launch();
 const page = await browser.newPage();
 page.on("pageerror", (e) => console.error(e));
-await page.goto("http://localhost:5179/stargazer-sprites.html", { waitUntil: "commit" }); // the bakes block "load"
+await page.goto("http://localhost:5179/stargazer-sprites.html", { waitUntil: "commit" }); // los bakeos bloquean "load"
 const sprites = await (
   await page.waitForFunction(() => window.sprites, null, { timeout: 600_000 })
 ).jsonValue();

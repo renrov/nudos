@@ -4,7 +4,7 @@
   width: 100%;
   height: 100%;
   touch-action: none;
-  /* A soft pool of light where the rope lies, on a faint linen weave, so the rope rests on something. */
+  /* Un charco suave de luz donde está la soga, sobre una trama de lino tenue, así la soga apoya sobre algo. */
   background:
     radial-gradient(ellipse 70% 45% at 50% 62%, rgb(255 253 249 / 0.55), transparent 75%),
     repeating-linear-gradient(0deg, rgb(35 32 28 / 0.018) 0 1px, transparent 1px 3px),
@@ -68,7 +68,7 @@
   color: var(--ink);
 }
 
-/* Progress toward the next round number of stars. */
+/* Progreso hacia el próximo número redondo de estrellas. */
 .goal {
   height: 8px;
   margin-top: 8px;
@@ -120,7 +120,7 @@
   box-shadow: 0 1px 0 #000;
 }
 
-/* The latest stargazers' faces, overlapping. */
+/* Las caras de los últimos stargazers, superpuestas. */
 .faces {
   display: flex;
   align-items: center;
@@ -185,7 +185,7 @@
   color: var(--ink);
 }
 
-/* The knot someone found: their face and their number. */
+/* El nudo que alguien encontró: su cara y su número. */
 .badge {
   display: flex;
   flex-wrap: wrap;
@@ -218,7 +218,7 @@
   color: var(--muted);
 }
 
-/* The knot they tied and how rare it is, linking to its lesson. */
+/* El nudo que ató y qué tan raro es, con link a su lección. */
 .learn {
   flex-basis: 100%;
   padding-top: 6px;
@@ -369,14 +369,23 @@
   box-sizing: border-box;
 }
 
+/* La etiqueta corta de la pastilla, para pantallas angostas. */
+.ropeShort {
+  display: none;
+}
+
 @media (max-width: 560px) {
   .pillFaces,
   .rope {
     display: none;
   }
+
+  .ropeShort {
+    display: inline;
+  }
 }
 
-/* Sits just above the playback bar. */
+/* Queda justo arriba de la barra de reproducción. */
 .prompt {
   position: fixed;
   left: 50%;
@@ -438,7 +447,7 @@
   height: 16px;
 }
 
-/* The playback bar is taller on a phone. */
+/* La barra de reproducción es más alta en un celular. */
 @media (max-width: 560px) {
   .prompt {
     bottom: 240px;

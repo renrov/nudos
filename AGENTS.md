@@ -1,145 +1,147 @@
-# Knots Made Easy
+# Nudos sin vueltas
 
-React + TypeScript + three.js app that animates knot tying. No physics library. The rope is simulated, not keyframed: invisible "guide" pins pull points of the rope along authored paths and physics does the rest (sagging, friction, collisions, cinching). React Router (framework mode, `ssr: false`) prerenders one static page per knot; it is hosted on Cloudflare Pages.
+App en React + TypeScript + three.js que anima cómo se atan nudos. Sin librería de física. La soga está simulada, no animada con keyframes: unos pines "guía" invisibles tiran de puntos de la soga a lo largo de recorridos escritos a mano y la física hace el resto (cuelga, roza, choca, se ajusta). React Router (modo framework, `ssr: false`) prerenderiza una página estática por nudo; está alojada en Cloudflare Pages.
 
-## Start here: what are you changing?
+## Arrancá acá: ¿qué vas a cambiar?
 
-All paths below are under `src/`.
+Todas las rutas de abajo están dentro de `src/`.
 
-| Task                                                   | Read first                                                                                           | Don't need         |
-| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- | ------------------ |
-| Add or tune a knot                                     | `engine/knots/types.ts`, `engine/knots/overhand.ts` (template), `engine/knots/index.ts`              | render, app        |
-| Rope physics (stiffness, contact, friction, guides)    | `engine/sim/rope.ts`, `engine/sim/rope.test.ts`, "Gotchas" below                                     | render, app        |
-| Ropes, props or other engine features                  | "Multi-rope layout" below, `engine/sim/rope.ts`, `engine/sim/bake.ts`, `engine/playback/timeline.ts` | ropeMesh internals |
-| How rope looks (strands, ends, shading, props, lights) | `engine/render/ropeMesh.ts`, `engine/render/ropeMaterial.ts`, `engine/render/stage.ts`               | sim, app           |
-| Camera, render loop, what is drawn                     | `engine/render/viewer.ts`, `engine/render/stage.ts`, `app/features/viewer/`                          | sim                |
-| Twist along the rope / normals                         | `engine/sim/frames.ts`                                                                               | rest of sim        |
-| Playback logic (play, seek, steps, loop, bake edge)    | `engine/playback/player.ts` + its test                                                               | sim, render        |
-| Player UI, picker, tuner                               | the feature folder in `app/features/`, `app/screens/KnotScreen.tsx`                                  | sim, render        |
-| Page titles, share previews, URLs, the domain          | `app/shared/site.ts`, `app/shared/meta.ts`, `app/routes/`                                            | engine             |
-| Knot recorder (tie a knot with the mouse, get guides)  | `engine/record/recording.ts`, `engine/render/recorder.ts`, `app/features/recorder/`                  | sim internals      |
-| Share videos of a knot (camera, captions, encoding)    | `../tools/film.ts` (camera, captions), `../tools/film.mjs` (driver), "Films" below                   | app                |
+| Tarea                                                               | Leé primero                                                                                                   | No hace falta        |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | -------------------- |
+| Agregar o ajustar un nudo                                           | `engine/knots/types.ts`, `engine/knots/overhand.ts` (plantilla), `engine/knots/index.ts`                      | render, app          |
+| Física de la soga (rigidez, contacto, fricción, guías)              | `engine/sim/rope.ts`, `engine/sim/rope.test.ts`, "Trampas" más abajo                                          | render, app          |
+| Sogas, props u otras funciones del motor                            | "Layout de varias sogas" más abajo, `engine/sim/rope.ts`, `engine/sim/bake.ts`, `engine/playback/timeline.ts` | internos de ropeMesh |
+| Cómo se ve la soga (cordones, puntas, sombreado, props, luces)      | `engine/render/ropeMesh.ts`, `engine/render/ropeMaterial.ts`, `engine/render/stage.ts`                        | sim, app             |
+| Cámara, loop de render, qué se dibuja                               | `engine/render/viewer.ts`, `engine/render/stage.ts`, `app/features/viewer/`                                   | sim                  |
+| Torsión a lo largo de la soga / normales                            | `engine/sim/frames.ts`                                                                                        | resto de sim         |
+| Lógica de reproducción (play, seek, pasos, loop, borde del bakeo)   | `engine/playback/player.ts` + su test                                                                         | sim, render          |
+| UI del reproductor, selector, tuner                                 | la carpeta de la feature en `app/features/`, `app/screens/KnotScreen.tsx`                                     | sim, render          |
+| Títulos de página, vistas previas para compartir, URLs, dominio     | `app/shared/site.ts`, `app/shared/meta.ts`, `app/routes/`                                                     | engine               |
+| Grabador de nudos (atar un nudo con el mouse y obtener las guías)   | `engine/record/recording.ts`, `engine/render/recorder.ts`, `app/features/recorder/`                           | internos de sim      |
+| Videos de un nudo para compartir (cámara, subtítulos, codificación) | `../tools/film.ts` (cámara, subtítulos), `../tools/film.mjs` (driver), "Películas" más abajo                  | app                  |
 
-Run `pnpm test` after anything in `engine/`. Look at UI and rendering changes in the browser (`pnpm dev`), since no unit test covers how it looks; `pnpm test:e2e` checks the built site.
+Corré `pnpm test` después de tocar cualquier cosa en `engine/`. Mirá los cambios de UI y de render en el navegador (`pnpm dev`), porque ningún test unitario cubre cómo se ve; `pnpm test:e2e` revisa el sitio buildeado.
 
-## Commands
+## Comandos
 
-- `pnpm dev` – dev server (`.claude/launch.json`: `dev` on 5173, `dev-react` on 5177)
-- `pnpm test` – vitest: sim tests, player tests, the bake fingerprint of every knot (~30 s)
-- `pnpm build` – route typegen, `tsc --noEmit`, then `react-router build` into `build/client` (prerendered pages + `404.html`)
-- `pnpm typecheck`, `pnpm lint` (oxlint, including the import rules below), `pnpm format` (oxfmt)
-- `pnpm test:e2e` – Playwright in `e2e/` against the production build served by `wrangler pages dev` on 5174
-- `pnpm preview` – serve `build/client` the way Cloudflare Pages does (after `pnpm build`)
-- `pnpm deploy:pages` / `pnpm deploy:pages:preview` – build and upload to Cloudflare Pages (production / a preview branch); needs `wrangler login` once. Not `pnpm deploy`: that name is a pnpm built-in.
-- `pnpm thumbs [url]` – with a dev server running, shoot every knot's finished state to `public/og/<id>.jpg` (1200×630: the share image and the picker card). Rerun after adding a knot or changing how one ends; a test fails if an image is missing.
-- `pnpm film [id… | --all]` – render knots as MP4s for sharing into `videos/` (git-ignored; real rope, scripted camera, step captions; frames drawn by `tools/film.ts`, encoded by macOS's own encoder; needs Google Chrome and macOS). `--cut=hands,cinch`, `--size=1080x1080`, `--speed`, `--hold`.
-- `pnpm baked` – serve `tools/` for the top-view debugging page (see "Checking a change with one bake")
+- `pnpm dev` – servidor de desarrollo (`.claude/launch.json`: `dev` en 5173, `dev-react` en 5177)
+- `pnpm test` – vitest: tests de la simulación, del player y la huella del bakeo de cada nudo (~30 s)
+- `pnpm build` – typegen de rutas, `tsc --noEmit`, después `react-router build` en `build/client` (páginas prerenderizadas + `404.html`)
+- `pnpm typecheck`, `pnpm lint` (oxlint, incluidas las reglas de imports de más abajo), `pnpm format` (oxfmt)
+- `pnpm test:e2e` – Playwright en `e2e/` contra el build de producción servido por `wrangler pages dev` en 5174
+- `pnpm preview` – sirve `build/client` como lo hace Cloudflare Pages (después de `pnpm build`)
+- `pnpm deploy:pages` / `pnpm deploy:pages:preview` – buildea y sube a Cloudflare Pages (producción / una rama de preview); necesita `wrangler login` una vez. No `pnpm deploy`: ese nombre es un comando propio de pnpm.
+- `pnpm thumbs [url]` – con un servidor de desarrollo corriendo, fotografía el estado terminado de cada nudo en `public/og/<id>.jpg` (1200×630: la imagen para compartir y la tarjeta del selector). Volvé a correrlo después de agregar un nudo o cambiar cómo termina uno; un test falla si falta una imagen.
+- `pnpm film [id… | --all]` – renderiza nudos como MP4 para compartir en `videos/` (ignorado por git; soga real, cámara guionada, subtítulos de los pasos; los cuadros los dibuja `tools/film.ts` y los codifica el codificador propio de macOS; necesita Google Chrome y macOS). `--cut=hands,cinch`, `--size=1080x1080`, `--speed`, `--hold`.
+- `pnpm baked` – sirve `tools/` para la página de debug con vista de arriba (ver "Revisar un cambio con un solo bakeo")
 
-All of tests, typecheck, oxlint and oxfmt must pass before committing.
+Los tests, el typecheck, oxlint y oxfmt tienen que pasar antes de commitear.
 
-## Architecture
-
-```
-src/engine/   framework-free: no React, no DOM framework, nothing from src/app
-  knots/      KnotDef data, one file per knot; index.ts sets the menu order
-  sim/        RopeSim (XPBD), bake (whole knot → frame chunks; firstFrame), worker, MaterialFrames
-  playback/   Timeline (baked-frame store, sampling), Player (playback state store)
-  render/     stage (renderer, lights, table, camera, OrbitControls, view reset), ropeMesh,
-              ropeMaterial, KnotViewer (render loop: ticks the player, draws the ropes)
-  record/     recording.ts: recorder presets, hand track → Guide, recording → KnotDef and code
-  session.ts  createKnotSession: starts a knot's bake into a Player
-src/app/      React Router app
-  root.tsx, routes.ts, routes/   "/" (first knot), "/knots/:id", "/recorder", "*" (not found)
-  screens/KnotScreen.tsx         composes the features for one knot's page
-  features/<name>/               viewer, player, picker, tuner; each exports from its index.ts
-  shared/                        site.ts (domain, URLs), meta.ts (title/OG tags), hooks, ui/ (icons, IconButton)
-  styles/global.css              design tokens and base element styles; components use CSS modules
-```
-
-Dependency rules, enforced by oxlint (`.oxlintrc.json`):
-
-- `src/engine` never imports React, React Router or `src/app`.
-- A feature never imports another feature; screens and routes compose them.
-- Outside a feature, import it through its `index.ts`, never its files.
-
-React rules: the render loop and the bake stay outside React. UI reads the engine's stores with `useSyncExternalStore` (`Player.subscribe/getSnapshot`, `KnotViewer.onViewChange/isDefaultView`). The only effect hook is `useMountEffect` (`app/shared/hooks.ts`), for starting and stopping outside things (the viewer, a worker, a document listener). To start over (another knot, other physics), remount with a `key`: `KnotScreen` keys its session on the knot id and the physics.
-
-## How it is wired
+## Arquitectura
 
 ```
-route /knots/:id → KnotScreen → Session (keyed by knot + physics)
-   │  Player.forKnot(knot): plain data, so the prerendered page shows step 1 and the duration
+src/engine/   sin framework: nada de React, ningún framework de DOM, nada de src/app
+  knots/      datos KnotDef, un archivo por nudo; index.ts define el orden del menú
+  sim/        RopeSim (XPBD), bake (nudo entero → tandas de cuadros; firstFrame), worker, MaterialFrames
+  playback/   Timeline (almacén de cuadros bakeados, muestreo), Player (store del estado de reproducción)
+  render/     stage (renderer, luces, mesa, cámara, OrbitControls, reset de vista), ropeMesh,
+              ropeMaterial, KnotViewer (loop de render: avanza el player, dibuja las sogas)
+  record/     recording.ts: presets del grabador, recorrido de mano → Guide, grabación → KnotDef y código
+  session.ts  createKnotSession: arranca el bakeo de un nudo hacia un Player
+src/app/      app de React Router
+  root.tsx, routes.ts, routes/   "/" (primer nudo), "/nudos/:slug", "/estrellas", "/grabador", "*" (no encontrado)
+  screens/KnotScreen.tsx         combina las features para la página de un nudo
+  features/<nombre>/             viewer, player, picker, tuner; cada una exporta desde su index.ts
+  shared/                        site.ts (dominio, URLs), meta.ts (title/etiquetas OG), hooks, ui/ (íconos, IconButton)
+  styles/global.css              tokens de diseño y estilos base de los elementos; los componentes usan CSS modules
+  styles/fonts/                  Archivo (variable, OFL), alojada en el sitio; se precarga en root.tsx
+```
+
+Reglas de dependencias, que hace cumplir oxlint (`.oxlintrc.json`):
+
+- `src/engine` nunca importa React, React Router ni `src/app`.
+- Una feature nunca importa otra feature; las pantallas y las rutas las combinan.
+- Desde afuera de una feature, se importa a través de su `index.ts`, nunca de sus archivos.
+
+Reglas de React: el loop de render y el bakeo quedan afuera de React. La UI lee los stores del motor con `useSyncExternalStore` (`Player.subscribe/getSnapshot`, `KnotViewer.onViewChange/isDefaultView`). El único hook de efecto es `useMountEffect` (`app/shared/hooks.ts`), para arrancar y frenar cosas externas (el visor, un worker, un listener del documento). Para empezar de nuevo (otro nudo, otra física), se vuelve a montar con una `key`: `KnotScreen` usa como key de su sesión el id del nudo y la física.
+
+## Cómo está conectado
+
+```
+ruta /nudos/:slug → KnotScreen → Session (con key por nudo + física)
+   │  Player.forKnot(knot): datos planos, así la página prerenderizada muestra el paso 1 y la duración
    ▼
-ViewerCanvas mounts → new KnotViewer(canvas) → start(viewer):
-   createKnotSession(knot, player, physics) → Timeline ── posts KnotDef ──▶ sim/worker.ts → bake()
-      Timeline fills frame 0 at once (firstFrame), chunks arrive from the worker → player.setReady
-   viewer.show(session): KnotViewer's loop: player.tick(dt) → timeline.sample(time) → RopeMesh.update → render
-PlayerBar reads the Player store; its buttons call Player actions
+ViewerCanvas se monta → new KnotViewer(canvas) → start(viewer):
+   createKnotSession(knot, player, physics) → Timeline ── manda el KnotDef ──▶ sim/worker.ts → bake()
+      Timeline llena el cuadro 0 enseguida (firstFrame), las tandas llegan del worker → player.setReady
+   viewer.show(session): el loop de KnotViewer: player.tick(dt) → timeline.sample(time) → RopeMesh.update → render
+PlayerBar lee el store del Player; sus botones llaman a las acciones del Player
 ```
 
-Frames are baked in a Web Worker while the user watches; playback waits at the edge of what is baked. Before scripts run, the prerendered page shows the whole layout and the knot's picture as a faded poster; the poster fades out once the viewer draws its first frame (the start pose, computed on the main thread), so the page is never empty and nothing shifts.
+Los cuadros se bakean en un Web Worker mientras el usuario mira; la reproducción espera en el borde de lo que ya está bakeado. Antes de que corran los scripts, la página prerenderizada muestra todo el layout y la imagen del nudo como un póster desvanecido; el póster se desvanece cuando el visor dibuja su primer cuadro (la pose inicial, calculada en el hilo principal), así la página nunca está vacía y nada se mueve.
 
-### Files
+### Archivos
 
-- `engine/knots/types.ts` – the data model: `KnotDef` (`ropes[]`, optional `props[]`, `guides[]`, `steps[]`, `duration`), `RopeDef` (length, radius, `start` polyline, optional `color`), `Prop` (capsule/cylinder), `Guide` (`rope?`, `at` = fraction along that rope, `grab` time, `path` keys, optional `compliance`/`force`).
-- `engine/knots/overhand.ts` – a good template. `engine/knots/index.ts` lists knots in menu order.
-- `engine/sim/rope.ts` – `RopeSim`: position-based Cosserat rod, small-step XPBD (24 substeps per frame). Per substep: guides, bend/twist, stretch/shear, then rounds of (tridiagonal direct length solve + self/rope-rope collision), then table and prop contact. Deterministic. Also `sampleHermite` (guide paths) and `particleCount`.
-- `engine/sim/bake.ts` – runs a whole knot, emits chunks of frames/normals; `firstFrame` gives frame 0 alone. `engine/sim/frames.ts` – `MaterialFrames`: per-rope parallel-transported normals so rope twist stays with the material. `engine/sim/bake.fingerprint.test.ts` – hash of every knot's bake; update a hash only for an intended change.
-- `engine/playback/timeline.ts` – main-thread frame store, `counts` per rope, `sample(time)`. `player.ts` – playback state and actions.
-- `engine/render/ropeMesh.ts` – three-strand laid-rope geometry rebuilt around the centreline every frame, plus cut ends/sleeves. `ropeMaterial.ts` – rope material and textures. `stage.ts` – renderer, camera, lights, table, `createPropMesh`. `viewer.ts` – `KnotViewer`.
-- `app/features/tuner/` – material playground: add `?tune` to any knot page for sliders over `DEFAULT_PHYSICS` (in `rope.ts`); letting go writes the values to the URL (`&bend=0.01&mass=2.2`), which re-bakes the knot.
-- `/recorder` – the knot playground: click the rope to put a hand on it (it holds until let go); with time stopped, drag hands' dots to plan a move (W/S for height), then Play move takes them all there together. Each hand is recorded as a guide (`RopeSim.hands` are the live hands, `RopeSim.save/restore` back exact undo). Replay all re-runs the guides as the bake would; Copy code gives a `KnotDef` to tidy into `src/engine/knots/`. The state is kept in localStorage.
-- `app/shared/site.ts` – `SITE_URL` (the custom domain; the only place it lives), `knotPath`, `knotImagePath`.
-- `wrangler.toml`, `public/_headers` – Cloudflare Pages project and asset caching.
+- `engine/knots/types.ts` – el modelo de datos: `KnotDef` (`ropes[]`, `props[]` opcional, `guides[]`, `steps[]`, `duration`), `RopeDef` (largo, radio, polilínea `start`, `color` opcional), `Prop` (cápsula/cilindro), `Guide` (`rope?`, `at` = fracción a lo largo de esa soga, tiempo de `grab`, keys de `path`, `compliance`/`force` opcionales).
+- `engine/knots/overhand.ts` – una buena plantilla. `engine/knots/index.ts` lista los nudos en el orden del menú.
+- `engine/sim/rope.ts` – `RopeSim`: varilla de Cosserat basada en posiciones, XPBD de pasos chicos (24 subpasos por cuadro). Por subpaso: guías, flexión/torsión, estiramiento/corte, después rondas de (cálculo directo tridiagonal de largos + colisión de la soga consigo misma y entre sogas), después contacto con la mesa y con los props. Determinista. También `sampleHermite` (recorridos de las guías) y `particleCount`.
+- `engine/sim/bake.ts` – corre un nudo entero, emite tandas de cuadros/normales; `firstFrame` da solo el cuadro 0. `engine/sim/frames.ts` – `MaterialFrames`: normales transportadas en paralelo por soga para que la torsión de la soga se quede con el material. `engine/sim/bake.fingerprint.test.ts` – hash del bakeo de cada nudo; actualizá un hash solo para un cambio buscado.
+- `engine/playback/timeline.ts` – almacén de cuadros en el hilo principal, `counts` por soga, `sample(time)`. `player.ts` – estado de reproducción y acciones.
+- `engine/render/ropeMesh.ts` – geometría de soga colchada de tres cordones rearmada alrededor de la línea central en cada cuadro, más puntas cortadas/casquillos. `ropeMaterial.ts` – material y texturas de la soga. `stage.ts` – renderer, cámara, luces, mesa, `createPropMesh`. `viewer.ts` – `KnotViewer`.
+- `app/features/tuner/` – laboratorio de materiales: agregá `?tune` a la página de cualquier nudo para tener sliders sobre `DEFAULT_PHYSICS` (en `rope.ts`); al soltar se escriben los valores en la URL (`&bend=0.01&mass=2.2`), lo que vuelve a bakear el nudo.
+- `/grabador` – el taller de nudos: hacé clic en la soga para ponerle una mano (sostiene hasta que la soltás); con el tiempo frenado, arrastrá los puntos de las manos para planear un movimiento (W/S para la altura), y después Reproducir el movimiento las lleva a todas juntas. Cada mano se graba como una guía (`RopeSim.hands` son las manos en vivo, `RopeSim.save/restore` sostienen un deshacer exacto). Repetir todo vuelve a correr las guías como lo haría el bakeo; Copiar código da un `KnotDef` para emprolijar en `src/engine/knots/`. El estado se guarda en localStorage.
+- `app/shared/site.ts` – `SITE_URL` (el dominio propio; el único lugar donde vive), `knotPath` (por `slug`), `knotImagePath` (por `id`), `STARGAZERS_PATH`.
+- `public/_redirects` – redirecciones 301 desde las URLs viejas en inglés (`/knots/<id>/`, `/stargazers/`, `/recorder`). Un nudo nuevo no necesita entrada acá.
+- `wrangler.toml`, `public/_headers` – proyecto de Cloudflare Pages y cacheo de assets.
 
-### Multi-rope layout (important when touching the sim)
+### Layout de varias sogas (importante cuando se toca la simulación)
 
-All ropes live in one particle array and one segment array, one rope after another. Segment `j` joins particles `j` and `j+1` unless `end[j]` marks `j` as the last particle of its rope (a break). Stretch, bend/twist, the length solve, velocity smoothing and the collision `skip` rule must never cross a break. Baked frames hold all ropes back to back; `Timeline.counts[k]` gives each rope's slice, and `KnotViewer` gives each `RopeMesh` its slice via `subarray`. Radius, spacing and mass are per particle/segment.
+Todas las sogas viven en un solo array de partículas y un solo array de segmentos, una soga después de la otra. El segmento `j` une las partículas `j` y `j+1` salvo que `end[j]` marque a `j` como la última partícula de su soga (un corte). El estiramiento, la flexión/torsión, el cálculo de largos, el suavizado de velocidades y la regla de `skip` de las colisiones nunca tienen que cruzar un corte. Los cuadros bakeados guardan todas las sogas una detrás de la otra; `Timeline.counts[k]` da la porción de cada soga, y `KnotViewer` le pasa a cada `RopeMesh` su porción con `subarray`. El radio, el espaciado y la masa son por partícula/segmento.
 
-Props are static: `solveProps` pushes particles out and applies friction, once per substep after the table. A particle exactly on a prop's core is skipped.
+Los props son estáticos: `solveProps` empuja las partículas hacia afuera y aplica fricción, una vez por subpaso después de la mesa. Una partícula justo sobre el núcleo de un prop se saltea.
 
-## Adding a knot
+## Agregar un nudo
 
-Data only: write a `KnotDef` in `src/engine/knots/`, add it to `engine/knots/index.ts`, then run `pnpm thumbs` for its picture and add its hash to the bake fingerprint test. Do not add knot-specific code to the engine. Guide `at` is a fraction along its rope; the table is at y = 0, ropes rest at y = radius; the camera looks from +z. Every knot in the list is run through `src/engine/knots/knots.test.ts`, which assumes **one rope** and a knot that ties and cinches; a multi-rope knot needs its own tests.
+Solo datos: escribí un `KnotDef` en `src/engine/knots/` (con un `id` en inglés para sus archivos y un `slug` en castellano para su URL), agregalo a `engine/knots/index.ts`, después corré `pnpm thumbs` para su imagen y agregá su hash al test de huella del bakeo. No agregues código específico de un nudo al motor. El `at` de una guía es una fracción a lo largo de su soga; la mesa está en y = 0, las sogas apoyan en y = radio; la cámara mira desde +z. Todos los nudos de la lista pasan por `src/engine/knots/knots.test.ts`, que asume **una sola soga** y un nudo que se ata y se ajusta; un nudo de varias sogas necesita sus propios tests.
 
-### Choreography: think in hands, not pins
+### Coreografía: pensá en manos, no en pines
 
-Guides are hands. A natural move grabs one point and lets physics carry the rest; driving several points of the same stretch on their own paths makes them fight and the rope looks puppeted.
+Las guías son manos. Un movimiento natural agarra un punto y deja que la física lleve el resto; manejar varios puntos del mismo tramo con recorridos propios hace que se peleen y la soga parece una marioneta.
 
-- **One hand per move.** To flip a curve over, grab one point on it (about its middle) and carry it; let the rest follow. Pins that only laid out a shape let go (end their path with a bare `{ t }`) before the next move starts.
-- **Tie near the working end.** A long tail must be dragged and swung round, which causes waves, hooks and whipping. Use only as much tail as the tuck needs.
-- **Lay rope straight.** If two pins hold less distance apart than the rope between them, the slack bows into a wave. Space targets by about the rope length between the pinned points.
-- **The end leads.** When the end travels, keep it ahead of the rope behind it so it points where it is going, not trailing as a hook.
-- **Lift low.** Clear the rope underneath by a little (centre about 3–4 radii up). Rope lifted high toward the camera is seen end-on and its strands read as noise.
-- **Pull both ends evenly.** Final pull targets far enough apart to cinch (the cinch test), and centred on the knot so it does not slide (the "stays where it was tied" test).
-- **Check what a stage looks like** in the browser at a few step times, not only the tests: tests catch topology and cinching, not awkward motion.
+- **Una mano por movimiento.** Para dar vuelta una curva, agarrá un punto de ella (más o menos en el medio) y llevalo; dejá que el resto siga. Los pines que solo armaban una forma sueltan (terminá su recorrido con un `{ t }` pelado) antes de que arranque el próximo movimiento.
+- **Atá cerca de la punta.** Una cola larga hay que arrastrarla y revolearla, lo que genera ondas, ganchos y latigazos. Usá solo la cola que necesita la pasada.
+- **Tendé la soga derecha.** Si dos pines sostienen menos distancia entre sí que la soga que hay entre ellos, el sobrante se arquea en una onda. Separá los objetivos más o menos según el largo de soga entre los puntos sostenidos.
+- **La punta va adelante.** Cuando la punta viaja, mantenela por delante de la soga que la sigue, así apunta hacia donde va y no queda colgando como un gancho.
+- **Levantá bajo.** Pasá por encima de la soga de abajo por poquito (el centro a unos 3–4 radios de altura). Una soga levantada muy alto hacia la cámara se ve de punta y sus cordones se leen como ruido.
+- **Tirá de las dos puntas parejo.** Los objetivos del tirón final, lo bastante separados para ajustar (el test de ajuste) y centrados en el nudo para que no se deslice (el test de "se queda donde se ató").
+- **Fijate cómo se ve cada etapa** en el navegador en algunos tiempos de los pasos, no solo en los tests: los tests detectan la topología y el ajuste, no un movimiento torpe.
 
-### Checking a change with one bake
+### Revisar un cambio con un solo bakeo
 
-`tools/knot-dump.test.ts` bakes one single-rope knot and prints numbers, so each guide change costs one bake (~20 s) instead of a test run or a sweep. It is skipped unless `KNOT` is set, so `pnpm test` ignores it.
+`tools/knot-dump.test.ts` bakea un nudo de una sola soga e imprime números, así cada cambio de guía cuesta un bakeo (~20 s) en lugar de una corrida de tests o un barrido. Se saltea salvo que esté definida `KNOT`, así `pnpm test` lo ignora.
 
 ```bash
 KNOT=bowline TIMES=13.3,13.9 ATS=0.272,0.95,1 CROSS=13.9,18 npx vitest run tools/knot-dump.test.ts --disableConsoleIntercept
 ```
 
-- One row per time in `TIMES` (default: the step times), giving the position of each point in `ATS` (fractions along the rope) as `at(x, height in radii, z)`. Compare it with the guide's target to see whether a hand keeps up, and with nearby strands to see where the rope really is: a held loop on soft rope can end up smaller than its pins.
-- `cross t:` lists where the rope crosses itself in top view, for example `0.52 under 0.73`. An extra crossing means an extra wrap or curve; a missing one means a tuck missed its hole. It is a rough check and can miss crossings inside a tight knot.
-- `stretch` is the worst link stretch (keep it under about 1.1); `closest` is the nearest approach of distant rope parts (under 2R means one passed through another).
-- `tools/out/bake.json` (git-ignored) feeds `tools/baked.html`: run `pnpm baked` and open http://localhost:5178/baked.html (add `?zoom` for the middle of the table, `?box=x0,x1,z0,z1` for any area) for a top view with step ticks. With several ropes, pick a point on rope k with `ATS=k:0.5`. The report is also saved to `tools/out/metrics.txt`.
+- Una fila por tiempo en `TIMES` (por defecto: los tiempos de los pasos), con la posición de cada punto de `ATS` (fracciones a lo largo de la soga) como `at(x, altura en radios, z)`. Comparala con el objetivo de la guía para ver si una mano llega, y con los tramos cercanos para ver dónde está la soga de verdad: un bucle sostenido en una soga blanda puede terminar más chico que sus pines.
+- `cross t:` lista dónde se cruza la soga consigo misma en la vista de arriba, por ejemplo `0.52 under 0.73`. Un cruce de más quiere decir una vuelta o una curva de más; uno de menos quiere decir que una pasada no entró en su agujero. Es una revisión aproximada y puede perderse cruces adentro de un nudo apretado.
+- `stretch` es el peor estiramiento de un eslabón (mantenelo por debajo de 1.1 más o menos); `closest` es el acercamiento máximo entre partes lejanas de la soga (menos de 2R quiere decir que una atravesó a otra).
+- `tools/out/bake.json` (ignorado por git) alimenta `tools/baked.html`: corré `pnpm baked` y abrí http://localhost:5178/baked.html (agregá `?zoom` para el medio de la mesa, `?box=x0,x1,z0,z1` para cualquier zona) para una vista de arriba con marcas de los pasos. Con varias sogas, elegí un punto de la soga k con `ATS=k:0.5`. El reporte también se guarda en `tools/out/metrics.txt`.
 
-### Films for sharing
+### Películas para compartir
 
-`pnpm film bowline` (or `--all`) writes `videos/<id>.mp4` (git-ignored, so the files stay out of the repo's history): 1920×1080 H.264, no audio, ~20 s, ready for X. Nothing is faked: the page `tools/film.html` + `film.ts` bakes the knot, then draws each frame on request with the real `RopeMesh` and `createStage`, so the film's clock is exact and the camera is a script, not a mouse.
+`pnpm film bowline` (o `--all`) escribe `videos/<id>.mp4` (ignorado por git, así los archivos quedan afuera del historial del repo): 1920×1080 H.264, sin audio, ~20 s, listo para X. No hay nada trucado: la página `tools/film.html` + `film.ts` bakea el nudo y después dibuja cada cuadro a pedido con el `RopeMesh` y el `createStage` reales, así el reloj de la película es exacto y la cámara es un guion, no un mouse.
 
-- **Cuts:** `--cut=full` (default, the captioned tutorial, `<id>.mp4`), `--cut=hands` (`<id>-hands.mp4`, ~11 s at 1.8× with "No keyframes." and glowing dots where each guide holds the rope; for developers) and `--cut=cinch` (`<id>-cinch.mp4`, ~5–7 s close-up of the last pull; for everyone). `--cut=all` or a comma list renders several. Each cut re-bakes the knot.
-- **Camera:** the `keys` array in `film.ts` (film time, azimuth°, elevation°, distance); a cardinal spline carries the camera through them, and the target drifts from the table's middle onto the knot's densest part of the finished rope (`knotCentre`).
-- **Captions:** the step title and `n / total` come from `knot.steps`; the title top left and the address on the final hold are drawn on a 2D canvas over the frame (`overlay`).
-- **Encoding:** `tools/encode-video.swift` (AVFoundation, built on first use into `tools/out/film/`), because there is no ffmpeg dependency. macOS and Google Chrome are needed (`--headless` falls back to software GL, which is slow). Options: `--size=1080x1080`, `--fps`, `--speed` (tying speed), `--hold` (seconds on the finished knot).
-- Frames are JPEGs in a temporary folder that is deleted after encoding (`--keep` keeps them, to inspect one). The bitrate is 14 Mbit/s, which makes the longest knots about 35 MB; lower `AverageBitRate` in the Swift file for smaller files.
+- **Cortes:** `--cut=full` (por defecto, el tutorial con subtítulos, `<id>.mp4`), `--cut=hands` (`<id>-hands.mp4`, ~11 s a 1.8× con "Sin keyframes." y puntos brillantes donde cada guía sostiene la soga; para developers) y `--cut=cinch` (`<id>-cinch.mp4`, ~5–7 s de primer plano del último tirón; para todo el mundo). `--cut=all` o una lista con comas renderiza varios. Cada corte vuelve a bakear el nudo.
+- **Cámara:** el array `keys` en `film.ts` (tiempo de película, azimut°, elevación°, distancia); un spline cardinal lleva la cámara a través de ellas, y el objetivo deriva desde el medio de la mesa hacia la parte más densa de la soga terminada, el nudo (`knotCentre`).
+- **Subtítulos:** el título del paso y `n / total` salen de `knot.steps`; el título arriba a la izquierda y la dirección en el plano final se dibujan en un canvas 2D por encima del cuadro (`overlay`).
+- **Codificación:** `tools/encode-video.swift` (AVFoundation, se compila la primera vez en `tools/out/film/`), porque no hay dependencia de ffmpeg. Hacen falta macOS y Google Chrome (`--headless` cae en GL por software, que es lento). Opciones: `--size=1080x1080`, `--fps`, `--speed` (velocidad de atado), `--hold` (segundos sobre el nudo terminado).
+- Los cuadros son JPEGs en una carpeta temporal que se borra después de codificar (`--keep` los conserva, para inspeccionar uno). El bitrate es de 14 Mbit/s, lo que deja los nudos más largos en unos 35 MB; bajá `AverageBitRate` en el archivo Swift para archivos más chicos.
 
-## Gotchas
+## Trampas
 
-- Physics constants in `rope.ts` were tuned with metrics sweeps; the rope material (`DEFAULT_PHYSICS`) is picked by eye in the `?tune` playground; change them deliberately and re-run the full tests. Every knot must keep baking bit-identically unless a change is intended (the fingerprint test checks).
-- Rope-vs-prop and rope-vs-rope no-pass-through tests live in `src/engine/sim/rope.test.ts` (a test knot with two ropes and a pole). `RopeMesh` contact shading only considers its own rope.
-- `RopeDef.start` must be about as long as `length` (the constructor throws otherwise).
-- Collision is an O(n²) pair test with a block broad phase: fine for a few hundred particles, add a spatial hash for much more. A knot must bake faster than real time, or playback stalls at the bake edge.
+- Las constantes de física de `rope.ts` se ajustaron con barridos de métricas; el material de la soga (`DEFAULT_PHYSICS`) se eligió a ojo en el laboratorio `?tune`; cambialas a propósito y volvé a correr todos los tests. Cada nudo tiene que seguir bakeándose idéntico bit a bit salvo que el cambio sea buscado (lo revisa el test de huella).
+- Los tests de que la soga no atraviese props ni otras sogas viven en `src/engine/sim/rope.test.ts` (un nudo de prueba con dos sogas y un poste). El sombreado de contacto de `RopeMesh` solo tiene en cuenta su propia soga.
+- `RopeDef.start` tiene que ser más o menos tan largo como `length` (si no, el constructor tira error).
+- La colisión es un test de pares O(n²) con una broad phase por bloques: alcanza para unos pocos cientos de partículas; agregá un hash espacial para muchas más. Un nudo tiene que bakearse más rápido que en tiempo real, si no la reproducción se traba en el borde del bakeo.

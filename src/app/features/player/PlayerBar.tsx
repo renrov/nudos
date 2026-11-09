@@ -5,6 +5,9 @@ import { useMountEffect } from "../../shared/hooks";
 import { LoopIcon, PauseIcon, PlayIcon } from "../../shared/ui/icons";
 import styles from "./player.module.css";
 
+/** Segundos con coma decimal, como se escriben en Argentina: 4,6. */
+const seconds = (t: number) => t.toFixed(1).replace(".", ",");
+
 const SPEEDS = [
   { value: 0.25, label: "¼×" },
   { value: 0.5, label: "½×" },
@@ -13,8 +16,8 @@ const SPEEDS = [
 ];
 
 /**
- * The current step and the playback bar for a knot's player; also wires the keyboard shortcuts.
- * `extra` goes at the end of the bar, after the loop button.
+ * El paso actual y la barra de reproducción del reproductor de un nudo; también conecta los atajos de teclado.
+ * `extra` va al final de la barra, después del botón de repetir.
  */
 export function PlayerBar({
   player,
@@ -31,7 +34,7 @@ export function PlayerBar({
   useKeyboardShortcuts(player);
 
   return (
-    <section className={styles.player} aria-label="Playback" data-baked={s.ready >= s.duration}>
+    <section className={styles.player} aria-label="Reproducción" data-baked={s.ready >= s.duration}>
       <p className={styles.step}>
         <span className={styles.stepNum}>
           {s.step + 1}/{steps.length}
@@ -42,7 +45,7 @@ export function PlayerBar({
         <button
           type="button"
           className={styles.play}
-          aria-label={s.playing ? "Pause" : "Play"}
+          aria-label={s.playing ? "Pausar" : "Reproducir"}
           aria-pressed={s.playing}
           onClick={player.togglePlay}
         >
@@ -59,7 +62,7 @@ export function PlayerBar({
                 <button
                   type="button"
                   style={{ left: percent(step.t) }}
-                  aria-label={`Step ${i + 1}: ${step.title}`}
+                  aria-label={`Paso ${i + 1}: ${step.title}`}
                   title={step.title}
                   aria-current={i === s.step ? "step" : undefined}
                   onClick={() => player.seek(step.t)}
@@ -74,13 +77,13 @@ export function PlayerBar({
             max={s.duration}
             step={0.01}
             value={time}
-            aria-label="Timeline"
-            aria-valuetext={`${time.toFixed(1)} of ${s.duration.toFixed(1)} seconds`}
+            aria-label="Línea de tiempo"
+            aria-valuetext={`${seconds(time)} de ${seconds(s.duration)} segundos`}
             onChange={(e) => player.seek(Number(e.target.value))}
           />
         </div>
-        <span className={styles.clock}>{time.toFixed(1)}s</span>
-        <div className={styles.speed} role="radiogroup" aria-label="Speed">
+        <span className={styles.clock}>{seconds(time)}s</span>
+        <div className={styles.speed} role="radiogroup" aria-label="Velocidad">
           {SPEEDS.map(({ value, label }) => (
             <label key={value}>
               <input
@@ -97,7 +100,7 @@ export function PlayerBar({
         <button
           type="button"
           className={styles.loop}
-          aria-label="Loop"
+          aria-label="Repetir"
           aria-pressed={s.loop}
           onClick={player.toggleLoop}
         >
@@ -109,7 +112,10 @@ export function PlayerBar({
   );
 }
 
-/** Space plays or pauses, the arrow keys step back and forth; focused controls keep their own keys. */
+/**
+ * Espacio reproduce o pausa, las flechas avanzan y retroceden de a un paso; los controles con foco
+ * conservan sus propias teclas.
+ */
 function useKeyboardShortcuts(player: Player) {
   useMountEffect(() => {
     const onKey = (e: KeyboardEvent) => {

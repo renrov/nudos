@@ -3,13 +3,13 @@ import { firstFrame, frameCount, type BakeChunk } from "../sim/bake";
 import { DEFAULT_PHYSICS, FPS, particleCount, type RopePhysics } from "../sim/rope";
 
 /**
- * Baked frames of one knot. The simulation fills it from a worker while the user
- * watches; playback and scrubbing only ever read from here.
+ * Cuadros bakeados de un nudo. La simulación lo va llenando desde un worker mientras el usuario
+ * mira; la reproducción y el scrubbing solo leen de acá.
  */
 export class Timeline {
-  /** Particles in all ropes together. */
+  /** Partículas de todas las sogas juntas. */
   readonly n: number;
-  /** Particles of each rope, in order; a frame holds the ropes one after another. */
+  /** Partículas de cada soga, en orden; un cuadro guarda las sogas una después de la otra. */
   readonly counts: number[];
   readonly duration: number;
   baked = 0;
@@ -35,7 +35,7 @@ export class Timeline {
       this.normals.set(normals, start * this.n * 3);
       this.baked = start + frames.length / (this.n * 3);
     };
-    // The start pose is ready at once, so the rope shows while the worker bakes the rest.
+    // La pose inicial está lista enseguida, así la soga se ve mientras el worker bakea el resto.
     store(firstFrame(knot, physics));
     worker.onmessage = (e: MessageEvent<BakeChunk>) => {
       store(e.data);
@@ -45,17 +45,20 @@ export class Timeline {
     worker.postMessage({ knot, physics });
   }
 
-  /** Stops baking; for a timeline that is being replaced. */
+  /** Frena el bakeo; para una línea de tiempo que se está reemplazando. */
   dispose(): void {
     this.worker.terminate();
   }
 
-  /** Seconds that are ready to play. */
+  /** Segundos que ya están listos para reproducir. */
   get ready(): number {
     return Math.max(0, (this.baked - 1) / FPS);
   }
 
-  /** Rope positions and material normals at `time`, blended between frames so slow motion stays smooth. */
+  /**
+   * Posiciones de la soga y normales del material en `time`, mezcladas entre cuadros para que la
+   * cámara lenta se vea suave.
+   */
   sample(time: number): { positions: Float32Array; normals: Float32Array } {
     const stride = this.n * 3;
     const f = Math.min(Math.max(time, 0), this.ready) * FPS;

@@ -12,7 +12,7 @@
   cursor: grabbing;
 }
 
-/* The finished knot, soft and faded, until the scene draws its first frame. */
+/* El nudo terminado, suave y desvanecido, hasta que la escena dibuja su primer cuadro. */
 .poster {
   position: fixed;
   inset: 0;
@@ -29,7 +29,7 @@
   opacity: 0;
 }
 
-/* Matches the playback bar's small round buttons, where the screen places it. */
+/* Hace juego con los botoncitos redondos de la barra de reproducción, donde la pantalla lo ubique. */
 .reset {
   flex: none;
   display: grid;

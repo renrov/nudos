@@ -2,8 +2,8 @@ import { describe, expect, test } from "vitest";
 import { knots } from "../knots";
 import { bake } from "./bake";
 
-// Hashes of every knot's baked positions. A refactor must leave them unchanged; a deliberate change
-// to a knot or to the physics updates its hash here (the failure message prints the new one).
+// Hashes de las posiciones bakeadas de cada nudo. Un refactor tiene que dejarlos iguales; un cambio
+// deliberado en un nudo o en la física actualiza su hash acá (el mensaje de falla imprime el nuevo).
 const FINGERPRINTS: Record<string, string> = {
   overhand: "6fa9fda654de",
   "slip-knot": "d0d933bace65",
@@ -16,9 +16,9 @@ const FINGERPRINTS: Record<string, string> = {
   "daisy-chain": "58a16779bccd",
 };
 
-describe("bake fingerprint", () => {
+describe("huella del bakeo", () => {
   test.each(knots.map((k) => [k.id, k] as const))(
-    "%s bakes bit-identically",
+    "%s se bakea idéntico bit a bit",
     async (id, knot) => {
       const chunks: Float32Array[] = [];
       bake(knot, (c) => chunks.push(c.frames));

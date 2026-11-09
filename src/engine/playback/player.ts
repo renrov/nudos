@@ -2,30 +2,31 @@ import type { KnotDef } from "../knots/types";
 import { frameCount } from "../sim/bake";
 import { FPS } from "../sim/rope";
 
-const LOOP_REST = 1.2; // seconds to show the finished knot before looping
+const LOOP_REST = 1.2; // segundos que se muestra el nudo terminado antes de repetir
 
 export interface PlayerSnapshot {
-  /** Seconds into the knot; may run past `duration` while the finished knot rests before a loop. */
+  /** Segundos dentro del nudo; puede pasarse de `duration` mientras el nudo terminado descansa antes de repetir. */
   time: number;
-  /** Seconds baked so far; playback waits here. */
+  /** Segundos bakeados hasta ahora; la reproducción espera acá. */
   ready: number;
   duration: number;
   playing: boolean;
   loop: boolean;
   speed: number;
-  /** Index into the knot's steps at `time`. */
+  /** Índice en los pasos del nudo para `time`. */
   step: number;
 }
 
 /**
- * Playback state of one knot, without any rendering or framework. The render loop calls `tick`;
- * UI reads it with `subscribe`/`getSnapshot` (fits React's useSyncExternalStore) and calls the actions.
+ * Estado de reproducción de un nudo, sin nada de render ni de framework. El loop de render llama a
+ * `tick`; la UI lo lee con `subscribe`/`getSnapshot` (encaja con useSyncExternalStore de React) y
+ * llama a las acciones.
  */
 export class Player {
   private snapshot: PlayerSnapshot;
   private readonly listeners = new Set<() => void>();
 
-  /** Starts paused at the first step with nothing baked, the same on the server and in the browser. */
+  /** Arranca en pausa en el primer paso sin nada bakeado, igual en el servidor que en el navegador. */
   constructor(
     private readonly steps: KnotDef["steps"],
     duration: number,
@@ -53,7 +54,7 @@ export class Player {
 
   seek = (time: number) => this.set({ time: Math.min(Math.max(time, 0), this.snapshot.duration) });
 
-  /** Jumps to the start of the next (+1) or previous (-1) step. */
+  /** Salta al inicio del paso siguiente (+1) o del anterior (-1). */
   stepBy = (delta: number) => {
     const i = Math.min(Math.max(this.snapshot.step + delta, 0), this.steps.length - 1);
     this.seek(this.steps[i].t);
@@ -65,10 +66,10 @@ export class Player {
 
   setReady = (ready: number) => this.set({ ready });
 
-  /** Advances by `dt` seconds of wall time, waiting at the edge of what has been baked. */
+  /** Avanza `dt` segundos de tiempo real, esperando en el borde de lo que ya está bakeado. */
   tick(dt: number) {
     const { playing, ready, duration, loop, speed } = this.snapshot;
-    // The first frame's step can be negative (its timestamp predates the clock's start).
+    // El paso del primer cuadro puede ser negativo (su timestamp es anterior al arranque del reloj).
     if (!playing || dt <= 0) return;
     const limit = ready < duration ? ready : duration + LOOP_REST;
     const time = Math.min(this.snapshot.time + dt * speed, limit);

@@ -23,11 +23,15 @@ import {
 import styles from "./recorder.module.css";
 
 const SPEEDS = [1, 0.5, 0.25];
+/** Cómo se llama cada agarre en pantalla. */
+const GRIP_LABELS: Record<Grip, string> = { light: "suave", firm: "firme", pull: "tirón" };
+/** Qué está haciendo el grabador, en pantalla. */
+const BUSY_LABELS = { move: "moviendo", replay: "repitiendo" } as const;
 const noRecorder = () => () => {};
 
 /**
- * The knot playground: put hands on the rope, plan where they go, play the move, and get the
- * whole thing as a knot's guides.
+ * El taller de nudos: ponele manos a la soga, planeá a dónde van, reproducí el movimiento y obtené
+ * todo como las guías de un nudo.
  */
 export function Recorder() {
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -45,7 +49,7 @@ export function Recorder() {
 
   return (
     <>
-      <canvas ref={canvas} className={styles.scene} aria-label="Rope to tie with hands" />
+      <canvas ref={canvas} className={styles.scene} aria-label="Soga para atar con las manos" />
       {recorder && state && <Panel recorder={recorder} state={state} />}
     </>
   );
@@ -53,7 +57,7 @@ export function Recorder() {
 
 const PANEL_KEY = "knot-recorder-panel";
 
-/** Where the panel was dragged to, kept across reloads; null for its corner. */
+/** A dónde se arrastró el panel, guardado entre recargas; null para su esquina. */
 function loadPlace(): { x: number; y: number } | null {
   try {
     return JSON.parse(localStorage.getItem(PANEL_KEY) ?? "null");
@@ -87,14 +91,14 @@ function Panel({ recorder, state }: { recorder: KnotRecorder; state: RecorderSna
     try {
       localStorage.setItem(PANEL_KEY, JSON.stringify(place));
     } catch {
-      // The panel just goes back to its corner on reload.
+      // El panel simplemente vuelve a su esquina al recargar.
     }
   };
 
   return (
     <section
       className={styles.panel}
-      aria-label="Knot playground"
+      aria-label="Taller de nudos"
       style={
         place
           ? {
@@ -112,14 +116,14 @@ function Panel({ recorder, state }: { recorder: KnotRecorder; state: RecorderSna
         onPointerDown={startDrag}
         onPointerMove={drag}
         onPointerUp={endDrag}
-        title="Drag to move the panel"
+        title="Arrastrá para mover el panel"
       >
         <DragIcon />
-        <h2>Knot playground</h2>
+        <h2>Taller de nudos</h2>
         <button
           type="button"
           className={styles.icon}
-          aria-label={folded ? "Unfold the panel" : "Fold the panel"}
+          aria-label={folded ? "Desplegar el panel" : "Plegar el panel"}
           aria-expanded={!folded}
           onClick={() => setFolded(!folded)}
         >
@@ -127,41 +131,54 @@ function Panel({ recorder, state }: { recorder: KnotRecorder; state: RecorderSna
         </button>
       </header>
 
-      <div className={styles.toolbar} role="toolbar" aria-label="Moves">
-        <Tool label="Play move (Space)" primary disabled={!idle} onClick={() => recorder.play()}>
+      <div className={styles.toolbar} role="toolbar" aria-label="Movimientos">
+        <Tool
+          label="Reproducir el movimiento (Espacio)"
+          primary
+          disabled={!idle}
+          onClick={() => recorder.play()}
+        >
           <PlayIcon />
         </Tool>
-        <Tool label="Wait ½ s" disabled={!idle} onClick={() => recorder.wait()}>
+        <Tool label="Esperar ½ s" disabled={!idle} onClick={() => recorder.wait()}>
           <WaitIcon />
         </Tool>
         <Tool
-          label="Let go of the selected hand (Backspace)"
+          label="Soltar la mano elegida (Retroceso)"
           disabled={!idle || state.selected === null}
           onClick={() => recorder.letGo()}
         >
           <LetGoIcon />
         </Tool>
         <span className={styles.gap} />
-        <Tool label="Undo (⌘Z)" disabled={!idle || !state.canUndo} onClick={() => recorder.undo()}>
+        <Tool
+          label="Deshacer (⌘Z)"
+          disabled={!idle || !state.canUndo}
+          onClick={() => recorder.undo()}
+        >
           <UndoIcon />
         </Tool>
-        <Tool label="Redo (⇧⌘Z)" disabled={!idle || !state.canRedo} onClick={() => recorder.redo()}>
+        <Tool
+          label="Rehacer (⇧⌘Z)"
+          disabled={!idle || !state.canRedo}
+          onClick={() => recorder.redo()}
+        >
           <RedoIcon />
         </Tool>
         {state.busy === "replay" ? (
-          <Tool label="Back to editing" onClick={() => recorder.stopReplay()}>
+          <Tool label="Volver a editar" onClick={() => recorder.stopReplay()}>
             <CloseIcon />
           </Tool>
         ) : (
           <Tool
-            label="Replay all, as the app will bake it"
+            label="Repetir todo, como lo va a precalcular la app"
             disabled={!idle || !state.moves}
             onClick={() => recorder.replay()}
           >
             <ReplayIcon />
           </Tool>
         )}
-        <Tool label="Copy code" onClick={() => navigator.clipboard.writeText(state.code)}>
+        <Tool label="Copiar código" onClick={() => navigator.clipboard.writeText(state.code)}>
           <CopyIcon />
         </Tool>
       </div>
@@ -171,9 +188,11 @@ function Panel({ recorder, state }: { recorder: KnotRecorder; state: RecorderSna
       {!folded && (
         <>
           <p className={styles.status}>
-            <span>{state.time.toFixed(2)} s</span>
-            <span>{state.moves} hands used</span>
-            {state.busy && <span className={styles.busy}>{state.busy}…</span>}
+            <span>{state.time.toFixed(2).replace(".", ",")} s</span>
+            <span>
+              {state.moves} {state.moves === 1 ? "mano usada" : "manos usadas"}
+            </span>
+            {state.busy && <span className={styles.busy}>{BUSY_LABELS[state.busy]}…</span>}
           </p>
 
           {state.hands.length > 0 && (
@@ -181,11 +200,11 @@ function Panel({ recorder, state }: { recorder: KnotRecorder; state: RecorderSna
               {state.hands.map((h, i) => (
                 <li key={h.id} aria-current={h.id === state.selected}>
                   <button type="button" onClick={() => recorder.select(h.id)}>
-                    Hand {i + 1} · {h.grip}
-                    {h.planned && " · planned"}
+                    Mano {i + 1} · {GRIP_LABELS[h.grip]}
+                    {h.planned && " · planeada"}
                   </button>
                   <Tool
-                    label={`Let go of hand ${i + 1}`}
+                    label={`Soltar la mano ${i + 1}`}
                     disabled={!idle}
                     onClick={() => recorder.letGo(h.id)}
                   >
@@ -198,8 +217,8 @@ function Panel({ recorder, state }: { recorder: KnotRecorder; state: RecorderSna
 
           {state.plan && (
             <fieldset className={styles.coords}>
-              <legend>Selected hand goes to (cm)</legend>
-              {(["X", "Height", "Z"] as const).map((name, axis) => (
+              <legend>La mano elegida va a (cm)</legend>
+              {(["X", "Altura", "Z"] as const).map((name, axis) => (
                 <label key={name}>
                   {name}
                   <input
@@ -217,35 +236,36 @@ function Panel({ recorder, state }: { recorder: KnotRecorder; state: RecorderSna
           )}
 
           <Choice
-            label="Move takes"
+            label="El movimiento dura"
             options={DURATIONS}
             value={state.duration}
-            format={(s) => `${s} s`}
+            format={(s) => `${String(s).replace(".", ",")} s`}
             onChange={(s) => recorder.setDuration(s)}
           />
           <Choice
-            label="Grip of new hands"
+            label="Agarre de las manos nuevas"
             options={Object.keys(GRIPS) as Grip[]}
             value={state.grip}
+            format={(g) => GRIP_LABELS[g]}
             onChange={(g) => recorder.setGrip(g)}
           />
           <Choice
-            label="Play speed"
+            label="Velocidad"
             options={SPEEDS}
             value={state.speed}
-            format={(s) => `${s}×`}
+            format={(s) => `${String(s).replace(".", ",")}×`}
             onChange={(s) => recorder.setSpeed(s)}
           />
 
           <StepForm onMark={(title) => recorder.markStep(title)} />
 
           <label>
-            Start from
+            Empezar desde
             <select
               value={state.preset}
               disabled={!idle}
               onChange={(e) =>
-                (state.moves === 0 || confirm("Start over? The recording will be cleared.")) &&
+                (state.moves === 0 || confirm("¿Empezar de nuevo? Se va a borrar la grabación.")) &&
                 recorder.setPreset(e.target.value)
               }
             >
@@ -257,38 +277,45 @@ function Panel({ recorder, state }: { recorder: KnotRecorder; state: RecorderSna
           <button
             type="button"
             disabled={!idle || !state.moves}
-            onClick={() => confirm("Clear the recording?") && recorder.clear()}
+            onClick={() => confirm("¿Borrar la grabación?") && recorder.clear()}
           >
-            Clear and start over
+            Borrar y empezar de nuevo
           </button>
 
           <details>
-            <summary>How it works</summary>
+            <summary>Cómo funciona</summary>
             <ul>
               <li>
-                Click the rope to put a hand on it. A hand holds its point until you let it go.
+                Hacé clic en la soga para ponerle una mano. La mano sostiene ese punto hasta que la
+                soltás.
               </li>
               <li>
-                Time is stopped while you plan. Drag a hand's dot across the table; drag the arrow
-                above the selected dot (or press W/S) to lift or lower it. The line under a dot
-                shows its height. Plan as many hands as you like.
+                El tiempo queda frenado mientras planeás. Arrastrá el punto de una mano por la mesa;
+                arrastrá la flecha que está sobre el punto elegido (o apretá W/S) para subirlo o
+                bajarlo. La línea debajo de un punto marca su altura. Planeá todas las manos que
+                quieras.
               </li>
               <li>
-                Play (Space) takes every hand to its dot together, over the move time. A faint dot
-                shows where a hand still is.
+                Reproducir (Espacio) lleva todas las manos juntas a sus puntos, durante el tiempo
+                del movimiento. Un punto tenue muestra dónde sigue estando una mano.
               </li>
-              <li>Let go opens the hand during the next move or wait.</li>
-              <li>Undo and redo step exactly. Replay shows it all as the app will bake it.</li>
+              <li>Soltar abre la mano durante el próximo movimiento o espera.</li>
               <li>
-                Firm or Pull grip for hands that tighten. Drag the empty table to turn the view.
+                Deshacer y rehacer vuelven exactamente al paso anterior. Repetir muestra todo como
+                lo va a precalcular la app.
               </li>
               <li>
-                Keys 1–9 select a hand. Drag the panel by its title; fold it to see more rope.
+                Agarre firme o de tirón para las manos que ajustan. Arrastrá la mesa vacía para
+                girar la vista.
+              </li>
+              <li>
+                Las teclas 1–9 eligen una mano. Arrastrá el panel desde el título; plegalo para ver
+                más soga.
               </li>
             </ul>
           </details>
           <details>
-            <summary>Code</summary>
+            <summary>Código</summary>
             <textarea readOnly value={state.code} rows={12} />
           </details>
         </>
@@ -325,12 +352,12 @@ function Tool({
 }
 
 function hint(state: RecorderSnapshot): string {
-  if (state.busy === "replay") return "Replaying everything from the start.";
-  if (state.busy) return "Playing the move…";
-  if (!state.hands.length) return "Click the rope to put a hand on it.";
+  if (state.busy === "replay") return "Repitiendo todo desde el principio.";
+  if (state.busy) return "Reproduciendo el movimiento…";
+  if (!state.hands.length) return "Hacé clic en la soga para ponerle una mano.";
   if (state.hands.some((h) => h.planned))
-    return "Plan more hands if you like, then press Play (Space).";
-  return "Drag a dot to move its hand, or its arrow to lift it. Click the rope for another hand.";
+    return "Planeá más manos si querés y después apretá Reproducir (Espacio).";
+  return "Arrastrá un punto para mover su mano, o su flecha para levantarla. Hacé clic en la soga para otra mano.";
 }
 
 function Choice<T extends string | number>({
@@ -373,11 +400,11 @@ function StepForm({ onMark }: { onMark: (title: string) => void }) {
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="Step title, from now"
-        aria-label="Step title"
+        placeholder="Título del paso, desde ahora"
+        aria-label="Título del paso"
       />
       <button type="submit" disabled={!title.trim()}>
-        Mark step
+        Marcar paso
       </button>
     </form>
   );

@@ -1,5 +1,5 @@
-// Encodes a folder of numbered JPEGs into an H.264 MP4 that X accepts, with macOS's own encoder
-// (no ffmpeg needed). Usage: encode-video <frames dir> <fps> <out.mp4>
+// Codifica una carpeta de JPEGs numerados en un MP4 H.264 que X acepta, con el codificador propio
+// de macOS (sin necesidad de ffmpeg). Uso: encode-video <carpeta de cuadros> <fps> <salida.mp4>
 import AVFoundation
 import CoreGraphics
 import ImageIO
@@ -63,5 +63,5 @@ input.markAsFinished()
 let done = DispatchSemaphore(value: 0)
 writer.finishWriting { done.signal() }
 done.wait()
-if writer.status != .completed { print("encode failed:", writer.error?.localizedDescription ?? "?"); exit(1) }
-print("encoded", files.count, "frames →", out)
+if writer.status != .completed { print("falló la codificación:", writer.error?.localizedDescription ?? "?"); exit(1) }
+print("codificados", files.count, "cuadros →", out)

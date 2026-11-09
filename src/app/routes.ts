@@ -2,8 +2,8 @@ import { type RouteConfig, index, route } from "@react-router/dev/routes";
 
 export default [
   index("routes/home.tsx"),
-  route("knots/:id", "routes/knot.tsx"),
-  route("stargazers", "routes/stargazers.tsx"),
-  route("recorder", "routes/recorder.tsx"),
+  route("nudos/:slug", "routes/knot.tsx"),
+  route("estrellas", "routes/stargazers.tsx"),
+  route("grabador", "routes/recorder.tsx"),
   route("*", "routes/not-found.tsx"),
 ] satisfies RouteConfig;

@@ -6,39 +6,42 @@ import { createCutFaceTexture } from "./ropeMaterial";
 import { KEY_LIGHT } from "./stage";
 
 const STRANDS = 3;
-const RADIAL = 20; // vertices around each strand
-const SUB = 3; // smooth samples per particle gap
-const CAP = 4; // rings in each strand's rounded end
-// Strand crests reach a little past the collision radius: where rope presses on rope in a knot,
-// the strands meet and nest into each other's grooves instead of leaving a visible gap.
+const RADIAL = 20; // vértices alrededor de cada cordón
+const SUB = 3; // muestras suaves por hueco entre partículas
+const CAP = 4; // anillos en el extremo redondeado de cada cordón
+// Las crestas de los cordones llegan un poco más allá del radio de colisión: donde la soga se
+// aprieta contra la soga en un nudo, los cordones se encuentran y se meten en las ranuras del otro
+// en lugar de dejar un hueco visible.
 const VISUAL_SCALE = 1.08;
-const OFFSET = 0.55; // strand axis distance from the rope axis, in visual radii
-// Strands are squashed against each other, so they are wider around the rope than they are deep.
-// Half-widths overlap neighbours a little (2 · 0.5 > √3 · 0.55), leaving a tight crease, not a gap.
-const STRAND_DEPTH = 0.45; // radial half-depth, in visual radii: crest at 0.55 + 0.45 = 1
-const STRAND_WIDTH = 0.5; // half-width around the rope, in visual radii
-const LAY = 7; // rope length per full turn of the strands, in radii
-const HAIRS_PER_RADIUS = 72; // loose fibres per radius of rope length, per strand
-const HAIR_LENGTH = 0.13; // typical loose fibre, in radii; real lengths scatter widely around it
-const STRAYS = 0.05; // share of fibres that are long strays
-// Each end is cut clean: the three strands show past a crimped metal sleeve that holds them.
-const TIP = 0.06; // cut strands showing beyond the sleeve, in radii: barely past its lip
-const HAIR_WIDTH = 0.00035; // m: real fibre width, so hairs thin out as the camera pulls back
-const SLEEVE = 1.2; // sleeve length, in radii
-// The sleeve is crimped on: rope under it is squeezed to SQUEEZE, and its lips bite in further.
+const OFFSET = 0.55; // distancia del eje del cordón al eje de la soga, en radios visuales
+// Los cordones están aplastados entre sí, así que son más anchos alrededor de la soga que profundos.
+// Los semianchos se superponen un poco con los vecinos (2 · 0.5 > √3 · 0.55), dejando un pliegue
+// apretado, no un hueco.
+const STRAND_DEPTH = 0.45; // semiprofundidad radial, en radios visuales: cresta en 0.55 + 0.45 = 1
+const STRAND_WIDTH = 0.5; // semiancho alrededor de la soga, en radios visuales
+const LAY = 7; // largo de soga por vuelta completa de los cordones, en radios
+const HAIRS_PER_RADIUS = 72; // fibras sueltas por radio de largo de soga, por cordón
+const HAIR_LENGTH = 0.13; // fibra suelta típica, en radios; los largos reales se dispersan mucho alrededor
+const STRAYS = 0.05; // proporción de fibras que son pelos largos sueltos
+// Cada punta está cortada limpia: los tres cordones asoman de un casquillo de metal engarzado que los sostiene.
+const TIP = 0.06; // cordones cortados que asoman más allá del casquillo, en radios: apenas pasado su borde
+const HAIR_WIDTH = 0.00035; // m: ancho real de una fibra, así los pelos se afinan cuando la cámara se aleja
+const SLEEVE = 1.2; // largo del casquillo, en radios
+// El casquillo está engarzado: la soga debajo se aprieta a SQUEEZE, y sus bordes muerden un poco más.
 const SQUEEZE = 0.9;
-const WALL = 0.09; // sleeve wall thickness, in visual radii
-const TUFTS = 300; // fibres standing out of each strand's cut end, spread over the whole face
-const NEAR = 12; // closest other rope parts remembered per particle, for contact shading
-// Groove colour: about half as bright as the crest and greyer, the strongest cue of twisted rope.
+const WALL = 0.09; // espesor de la pared del casquillo, en radios visuales
+const TUFTS = 300; // fibras que salen de la cara cortada de cada cordón, repartidas por toda la cara
+const NEAR = 12; // partes de otra soga más cercanas que se recuerdan por partícula, para el sombreado de contacto
+// Color de las ranuras: más o menos la mitad de brillante que la cresta y más gris, la señal más
+// fuerte de una soga retorcida.
 const GROOVE = [0.5, 0.49, 0.5];
-const DIRT = [0.78, 0.76, 0.76]; // greyer, darker wear where rope presses on rope in the knot
-const CONTACT_SHADOW = 0x4a3524; // warm brown, so the shadow under the rope is not grey
+const DIRT = [0.78, 0.76, 0.76]; // desgaste más gris y oscuro donde la soga se aprieta contra la soga en el nudo
+const CONTACT_SHADOW = 0x4a3524; // marrón cálido, así la sombra debajo de la soga no es gris
 const TO_LIGHT = KEY_LIGHT.clone().normalize();
 
 /**
- * Three-strand laid rope built around the simulated centerline every frame.
- * The strands are real geometry, so the outline is bumpy and the grooves stay dark.
+ * Soga colchada de tres cordones armada alrededor de la línea central simulada en cada cuadro.
+ * Los cordones son geometría real, así el contorno tiene relieve y las ranuras quedan oscuras.
  */
 export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
   private readonly n: number;
@@ -49,27 +52,27 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
   private readonly rw: number;
   private readonly pitch: number;
   private readonly centers: Float32Array;
-  private readonly frames: Float32Array; // normal and binormal per sample
+  private readonly frames: Float32Array; // normal y binormal por muestra
   private readonly tangents: Float32Array;
   private readonly lengths: Float32Array;
-  private readonly axis: Float32Array; // one strand's axis per sample
-  private readonly outward: Float32Array; // from the rope axis toward that strand
-  /** Loose fibres: each sticks out of one strand vertex, bent a little along the rope. */
+  private readonly axis: Float32Array; // el eje de un cordón por muestra
+  private readonly outward: Float32Array; // desde el eje de la soga hacia ese cordón
+  /** Fibras sueltas: cada una sale de un vértice de un cordón, un poco doblada a lo largo de la soga. */
   private readonly hairs: LineSegments2;
-  private readonly hairRoot: Uint32Array; // strand vertex each fibre grows from
-  private readonly hairShape: Float32Array; // length, lean along the rope, curl, sideways, per fibre
-  private readonly bodyHairs: number; // fibres from here on grow out of the cut faces
-  private readonly tuftAt: Float32Array; // per cut-face fibre: which disc, angle around it, distance out
-  private readonly ds: number; // centreline length between samples
+  private readonly hairRoot: Uint32Array; // vértice del cordón desde el que crece cada fibra
+  private readonly hairShape: Float32Array; // largo, inclinación a lo largo de la soga, rulo, costado, por fibra
+  private readonly bodyHairs: number; // las fibras de acá en adelante crecen desde las caras cortadas
+  private readonly tuftAt: Float32Array; // por fibra de cara cortada: qué disco, ángulo alrededor, distancia hacia afuera
+  private readonly ds: number; // largo de la línea central entre muestras
   private readonly sleeves: THREE.Mesh[];
-  /** Cut end of each strand at both rope ends, showing the yarns packed inside it. */
+  /** La punta cortada de cada cordón en los dos extremos de la soga, mostrando las filásticas apretadas adentro. */
   private readonly cutFaces: THREE.Mesh;
   private readonly radius: number;
-  private readonly near: Int16Array; // per particle, up to NEAR particles of other rope close by
+  private readonly near: Int16Array; // por partícula, hasta NEAR partículas de otra soga cercanas
   private readonly nearCount: Uint8Array;
   private readonly nearDist: Float32Array;
-  private readonly contact: Float32Array; // per particle: 0 free, 1 pressed into the knot
-  /** Soft shadow on the table right under the rope, darker the closer the rope lies. */
+  private readonly contact: Float32Array; // por partícula: 0 libre, 1 apretada en el nudo
+  /** Sombra suave sobre la mesa justo debajo de la soga, más oscura cuanto más cerca está la soga. */
   private readonly ground: THREE.Mesh;
 
   constructor(n: number, rope: { length: number; radius: number }, material: THREE.Material) {
@@ -88,7 +91,7 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
         for (let j = 0; j < RADIAL; j++) {
           const a = (s * rings + r) * (RADIAL + 1) + j;
           const b = a + RADIAL + 1;
-          index.push(a, a + 1, b, b, a + 1, b + 1); // counter-clockwise seen from outside
+          index.push(a, a + 1, b, b, a + 1, b + 1); // antihorario visto desde afuera
         }
     geometry.setIndex(index);
     super(geometry, material);
@@ -103,7 +106,7 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
     this.centers = new Float32Array(m * 3);
     this.frames = new Float32Array(m * 6);
     this.tangents = new Float32Array(m * 3);
-    // The lay is measured along the rope at rest, so stretching never slides the strands.
+    // El colchado se mide a lo largo de la soga en reposo, así estirarla nunca hace deslizar los cordones.
     this.lengths = Float32Array.from({ length: m }, (_, k) => (k / SUB) * (rope.length / (n - 1)));
     this.axis = new Float32Array(m * 3);
     this.outward = new Float32Array(m * 3);
@@ -111,18 +114,18 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
     this.receiveShadow = true;
     this.frustumCulled = false;
 
-    // Fibres grow only on the outer half of each strand, where the rope rubs and frays.
+    // Las fibras crecen solo en la mitad externa de cada cordón, donde la soga roza y se deshilacha.
     const body = Math.round((rope.length / radius) * HAIRS_PER_RADIUS * STRANDS);
     const count = body + 2 * STRANDS * TUFTS;
     this.ds = rope.length / (n - 1) / SUB;
-    // No fibres under the sleeves or on the sealed tips.
+    // Sin fibras debajo de los casquillos ni en las puntas selladas.
     const endZone = Math.ceil(((TIP + SLEEVE) * radius) / this.ds);
     this.hairRoot = new Uint32Array(count);
     this.hairShape = new Float32Array(count * 5);
     let seed = 11;
     const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
     const gauss = () => Math.sqrt(-2 * Math.log(rand() || 1e-9)) * Math.cos(2 * Math.PI * rand());
-    // Fuzz comes in patches where the rope has rubbed: a slow random density along the rope.
+    // La pelusa aparece en parches donde la soga rozó: una densidad aleatoria lenta a lo largo de la soga.
     const patches = Array.from({ length: 24 }, () => rand());
     const density = (r: number) => {
       const x = ((r - CAP) / m) * (patches.length - 1);
@@ -134,22 +137,23 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
       let r = CAP + endZone + Math.floor(rand() * (m - 2 * endZone));
       while (rand() > 0.25 + 0.75 * density(r))
         r = CAP + endZone + Math.floor(rand() * (m - 2 * endZone));
-      const j = Math.round((rand() - 0.5) * 0.5 * RADIAL + RADIAL) % RADIAL; // ±quarter turn of the crest
+      const j = Math.round((rand() - 0.5) * 0.5 * RADIAL + RADIAL) % RADIAL; // ±un cuarto de vuelta de la cresta
       this.hairRoot[h] = (s * rings + r) * (RADIAL + 1) + j;
-      // Mostly short, a long tail of medium ones, and a few long strays.
+      // La mayoría cortas, una cola larga de medianas y unos pocos pelos largos sueltos.
       const len =
         rand() < STRAYS
           ? HAIR_LENGTH * (3 + 3 * rand())
           : HAIR_LENGTH * Math.min(3, Math.exp(0.5 * gauss()));
-      // Length, lean along the rope, curl, sideways, and how much it stands up from the surface:
-      // some stick straight out, many lie over or bend away.
+      // Largo, inclinación a lo largo de la soga, rulo, costado y cuánto se para respecto de la
+      // superficie: algunas salen derechas, muchas quedan acostadas o se doblan hacia afuera.
       this.hairShape.set(
         [len * radius, gauss() * 0.6, gauss() * 0.5, gauss() * 0.9, 0.1 + 0.9 * rand() ** 0.7],
         h * 5,
       );
     }
-    // Tufts at the cut ends: short fibres standing out of each strand's face, splaying a little.
-    // Roots are spread evenly over the whole face (√ of a uniform number gives uniform area).
+    // Mechones en las puntas cortadas: fibras cortas que salen de la cara de cada cordón,
+    // abriéndose un poco.
+    // Las raíces se reparten de forma pareja sobre toda la cara (√ de un número uniforme da un área uniforme).
     this.bodyHairs = body;
     this.tuftAt = new Float32Array((count - body) * 3);
     for (let h = body; h < count; h++) {
@@ -158,18 +162,18 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
       const len = HAIR_LENGTH * (0.5 + rand() * 1.3);
       this.hairShape.set([len * radius, 0, gauss() * 0.3, gauss() * 0.35, 1], h * 5);
     }
-    // Wide lines: plain WebGL lines are always 1 px, too fine to read as fibre.
+    // Líneas anchas: las líneas comunes de WebGL siempre miden 1 px, demasiado finas para leerse como fibra.
     const hairGeometry = new LineSegmentsGeometry();
-    hairGeometry.setPositions(new Float32Array(count * 2 * 6)); // two segments per fibre
+    hairGeometry.setPositions(new Float32Array(count * 2 * 6)); // dos segmentos por fibra
     const base: THREE.Color = material.userData.fibreColor ?? new THREE.Color("#c39f6a");
-    // Each fibre comes out of the strand's shade: dark at the root, lighter toward the tip.
+    // Cada fibra sale con el tono del cordón: oscura en la raíz, más clara hacia la punta.
     const root = base.clone().multiplyScalar(0.45);
     const mid = base.clone().multiplyScalar(0.8);
     const tip = base.clone().lerp(new THREE.Color(0xf3e4c0), 0.2);
     const shades = new Float32Array(count * 12);
     const tint = new THREE.Color();
     for (let h = 0; h < count; h++) {
-      // Each fibre is its own shade, from dark brown to pale straw.
+      // Cada fibra tiene su propio tono, de marrón oscuro a paja clara.
       const v = 0.75 + 0.45 * rand();
       const a = tint.copy(root).multiplyScalar(v).toArray();
       const b = tint.copy(mid).multiplyScalar(v).toArray();
@@ -196,7 +200,7 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
     this.nearDist = new Float32Array(n * NEAR);
     this.contact = new Float32Array(n);
 
-    // Ground strip: edge, middle, edge per sample; colour alpha fades across and with height.
+    // Franja del piso: borde, medio, borde por muestra; el alfa del color se desvanece a lo ancho y con la altura.
     const groundGeometry = new THREE.BufferGeometry();
     groundGeometry.setAttribute("position", new THREE.BufferAttribute(new Float32Array(m * 9), 3));
     groundGeometry.setAttribute("color", new THREE.BufferAttribute(new Float32Array(m * 12), 4));
@@ -222,14 +226,14 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
     this.ground.renderOrder = -1;
     this.add(this.ground);
 
-    // Sleeve profile, turned around the rope: rounded lips and two crimp grooves.
-    // Built outward from the squeezed rope, so no strand ever cuts into the wall or the lips.
-    const Ri = SQUEEZE * visual * 1.01; // inner wall, sitting on the squeezed strand crests
+    // Perfil del casquillo, girado alrededor de la soga: bordes redondeados y dos ranuras de engarce.
+    // Se arma hacia afuera desde la soga apretada, así ningún cordón corta la pared ni los bordes.
+    const Ri = SQUEEZE * visual * 1.01; // pared interna, apoyada sobre las crestas apretadas de los cordones
     const R = Ri + WALL * visual;
-    const lip = Ri + 0.4 * WALL * visual; // rolled lip, still clear of the rope
+    const lip = Ri + 0.4 * WALL * visual; // borde enrollado, todavía sin tocar la soga
     const L = SLEEVE * radius;
-    // A closed outline, so the sleeve is a solid tube with a wall, not a see-through shell:
-    // outer face with crimp grooves, rolled lip, then back along the inside against the rope.
+    // Un contorno cerrado, así el casquillo es un tubo sólido con pared y no una cáscara
+    // transparente: cara exterior con ranuras de engarce, borde enrollado, y de vuelta por adentro contra la soga.
     const profile = [
       [Ri, -L / 2],
       [lip, -L / 2],
@@ -250,7 +254,7 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
       color: 0x8a8d91,
       metalness: 1,
       roughness: 0.5,
-      side: THREE.DoubleSide, // the closed outline's winding flips on the inner wall
+      side: THREE.DoubleSide, // el sentido del contorno cerrado se invierte en la pared interna
     });
     this.sleeves = [0, 1].map(() => {
       const sleeve = new THREE.Mesh(sleeveGeometry, metal);
@@ -260,7 +264,7 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
       return sleeve;
     });
 
-    // One disc per strand per end: a centre vertex fanned to the strand's last ring.
+    // Un disco por cordón por punta: un vértice central en abanico hasta el último anillo del cordón.
     const discs = 2 * STRANDS;
     const perDisc = RADIAL + 2;
     const faceGeometry = new THREE.BufferGeometry();
@@ -277,7 +281,7 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
     for (let d = 0; d < discs; d++) {
       const o = d * perDisc;
       faceUv.set([0.5, 0.5], o * 2);
-      const turn = d * 2.1; // each strand shows its yarns at a different angle
+      const turn = d * 2.1; // cada cordón muestra sus filásticas con un ángulo distinto
       for (let j = 0; j <= RADIAL; j++) {
         const a = (j / RADIAL) * Math.PI * 2 + turn;
         faceUv.set([0.5 + 0.48 * Math.cos(a), 0.5 + 0.48 * Math.sin(a)], (o + 1 + j) * 2);
@@ -300,7 +304,7 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
 
   update(p: Float32Array, pn: Float32Array): void {
     const { n, m, centers, frames, tangents, lengths, axis, outward, d, rs, rw, pitch } = this;
-    // Catmull-Rom between particles for a smooth centerline.
+    // Catmull-Rom entre partículas para una línea central suave.
     for (let i = 0; i < n - 1; i++)
       for (let s = 0; s < SUB; s++) {
         const u = s / SUB;
@@ -321,7 +325,7 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
     centers.set(p.subarray((n - 1) * 3, n * 3), (m - 1) * 3);
     this.findContacts(p);
 
-    // Frames from the baked material normals, so the twist travels with the rope.
+    // Marcos a partir de las normales de material bakeadas, así la torsión viaja con la soga.
     const t = new THREE.Vector3();
     const nor = new THREE.Vector3();
     const bin = new THREE.Vector3();
@@ -372,7 +376,7 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
         }
       }
 
-      // Rings run: start cap (tip first), body, end cap.
+      // Los anillos van: tapa inicial (punta primero), cuerpo, tapa final.
       for (let r = 0; r < this.rings; r++) {
         const k = r - CAP;
         const kk = Math.min(Math.max(k, 0), m - 1);
@@ -380,7 +384,7 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
         const b = Math.min(kk + 1, m - 1) * 3;
         st.set(axis[b] - axis[a], axis[b + 1] - axis[a + 1], axis[b + 2] - axis[a + 2]).normalize();
         out.fromArray(outward, kk * 3);
-        // The ring frame faces away from the rope axis, so the dark inner side stays inside.
+        // El marco del anillo mira hacia afuera del eje de la soga, así el lado interno oscuro queda adentro.
         sn.copy(out).addScaledVector(st, -out.dot(st)).normalize();
         sb.crossVectors(st, sn);
         center.fromArray(axis, kk * 3);
@@ -389,7 +393,7 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
         let tilt = 0;
         let along = lengths[kk];
         if (k < 0 || k >= m) {
-          // Cut flat: the cap rings close the strand into a disc facing out of the rope.
+          // Corte plano: los anillos de la tapa cierran el cordón en un disco que mira hacia afuera de la soga.
           const sign = k < 0 ? -1 : 1;
           ringR *= 1 - (k < 0 ? -k : k - m + 1) / CAP;
           tilt = (sign * Math.PI) / 2;
@@ -406,31 +410,33 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
             center.y + (sn.y * cosA * rs + sb.y * sinA * rw) * ringR,
             center.z + (sn.z * cosA * rs + sb.z * sinA * rw) * ringR,
           );
-          // Normal of an ellipse: the flatter the side, the more it faces outward.
+          // Normal de una elipse: cuanto más plano el costado, más mira hacia afuera.
           dir
             .copy(sn)
             .multiplyScalar(cosA / rs)
             .addScaledVector(sb, sinA / rw)
             .normalize();
-          // Occlusion: the sides pressed against the other strands sit in a dark, grey groove,
-          // and so does whatever faces other rope in the knot.
+          // Oclusión: los costados apretados contra los otros cordones quedan en una ranura oscura
+          // y gris, y lo mismo pasa con lo que mira hacia otra soga en el nudo.
           const lit = Math.min(1, Math.max(0, 0.45 + 0.75 * dir.dot(out)));
           const x = center.x + (sn.x * cosA * rs + sb.x * sinA * rw) * ringR;
           const y = center.y + (sn.y * cosA * rs + sb.y * sinA * rw) * ringR;
           const z = center.z + (sn.z * cosA * rs + sb.z * sinA * rw) * ringR;
           const pi = Math.min(Math.round(kk / SUB), n - 1);
-          // Blend the particles either side, so shade does not step where the nearest one changes.
+          // Mezclar las partículas de cada lado, así el sombreado no salta donde cambia la más cercana.
           const pa = Math.min(Math.floor(kk / SUB), n - 1);
           const pb = Math.min(pa + 1, n - 1);
           const f = kk / SUB - pa;
           const occ =
             (1 - f) * this.occlusion(p, pa, x, y, z, dir) + f * this.occlusion(p, pb, x, y, z, dir);
-          // Sides facing the key light keep most of their light: the shadow map darkens them if blocked.
+          // Los costados que miran a la luz principal conservan casi toda su luz: el shadow map los
+          // oscurece si están tapados.
           const open = 1 - 0.65 * occ * (1 - 0.7 * Math.max(0, dir.dot(TO_LIGHT)));
           const worn = this.contact[pi] * 0.7;
           if (tilt !== 0) {
-            // Cut face: packed fibre ends, lit straight on, mottled bundle to bundle. Groove and
-            // contact shading belong to the strand's sides; here they made the face read as a hole.
+            // Cara cortada: extremos de fibra apretados, iluminados de frente, moteados de manojo
+            // en manojo. El sombreado de ranura y de contacto es de los costados del cordón; acá
+            // hacía que la cara se leyera como un agujero.
             const c = 0.82 + 0.18 * Math.abs((Math.sin(v * 12.9898) * 43758.5453) % 1);
             col[0] = col[1] = col[2] = c;
           } else
@@ -439,7 +445,8 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
           colors.setXYZ(v, col[0], col[1], col[2]);
           if (tilt !== 0) dir.multiplyScalar(Math.cos(tilt)).addScaledVector(st, Math.sin(tilt));
           normals.setXYZ(v, dir.x, dir.y, dir.z);
-          // The cut face takes one spot of the texture: wrapping it around would pinwheel to a point.
+          // La cara cortada toma un solo punto de la textura: envolverla alrededor haría un
+          // remolino hacia un punto.
           if (tilt !== 0) uvs.setXY(v, along / pitch, 0.5);
           else uvs.setXY(v, along / pitch, j / RADIAL);
         }
@@ -452,11 +459,11 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
     this.updateGround();
     this.updateSleeves();
     this.updateCutFaces();
-    this.updateHairs(); // after the cut faces: end tufts grow out of them
+    this.updateHairs(); // después de las caras cortadas: los mechones de las puntas crecen desde ahí
   }
 
-  /** Sits each sleeve just behind its charred tip, lined up with the rope there. */
-  /** Lays each strand's cut face over its last ring, a hair proud so it never flickers. */
+  /** Ubica cada casquillo justo detrás de su punta quemada, alineado con la soga en ese lugar. */
+  /** Apoya la cara cortada de cada cordón sobre su último anillo, apenas sobresaliente así nunca parpadea. */
   private updateCutFaces(): void {
     const { m, rings, tangents, radius } = this;
     const pos = this.geometry.attributes.position as THREE.BufferAttribute;
@@ -467,7 +474,7 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
     for (let end = 0; end < 2; end++) {
       const r = end === 0 ? CAP : CAP + m - 1;
       const t = end === 0 ? 0 : (m - 1) * 3;
-      const sign = end === 0 ? -1 : 1; // the face looks out of the rope
+      const sign = end === 0 ? -1 : 1; // la cara mira hacia afuera de la soga
       const nx = sign * tangents[t];
       const ny = sign * tangents[t + 1];
       const nz = sign * tangents[t + 2];
@@ -499,7 +506,8 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
 
   private updateSleeves(): void {
     const { m, centers, tangents, ds, radius } = this;
-    // Exact arc position, between samples, so the tip showing past the lip is as short as set.
+    // Posición exacta sobre el arco, entre muestras, así la punta que asoma más allá del borde es
+    // tan corta como se configuró.
     const f = Math.min(((TIP + SLEEVE / 2) * radius) / ds, m - 2);
     const up = new THREE.Vector3(0, 1, 0);
     const t = new THREE.Vector3();
@@ -519,25 +527,26 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
   }
 
   /**
-   * How far the strands sit from the rope axis, and how big they are, near the ends: squeezed
-   * under the sleeve.
+   * Qué tan lejos del eje de la soga quedan los cordones, y qué tan grandes son, cerca de las
+   * puntas: apretados debajo del casquillo.
    */
   private endShape(k: number): [number, number] {
     const r = this.radius;
-    const s = Math.min(k, this.m - 1 - k) * this.ds; // from the nearer cut end
+    const s = Math.min(k, this.m - 1 - k) * this.ds; // desde la punta cortada más cercana
     const ease = (a: number, b: number, x: number) => Math.min(1, Math.max(0, (x - a) / (b - a)));
-    // 1 inside the sleeve, easing to 0 a little past each lip.
-    // Squeezed from the cut tip through the sleeve, easing back to full size past its inner lip.
+    // 1 adentro del casquillo, bajando suave a 0 un poco más allá de cada borde.
+    // Apretada desde la punta cortada a través del casquillo, volviendo suave al tamaño completo
+    // pasado su borde interno.
     const held = 1 - ease((TIP + SLEEVE) * r, (TIP + SLEEVE + 0.4) * r, s);
     const squeeze = 1 - (1 - SQUEEZE) * held;
     return [squeeze, squeeze];
   }
 
-  /** For each particle, the nearby particles of other rope, and how pressed into the knot it is. */
+  /** Para cada partícula, las partículas cercanas de otra soga, y qué tan apretada está en el nudo. */
   private findContacts(p: Float32Array): void {
     const { n, nearCount, contact, radius } = this;
     const reach = 3.2 * radius;
-    const skip = 4; // neighbours along the rope always touch; they are not contact
+    const skip = 4; // las vecinas a lo largo de la soga siempre se tocan; eso no es contacto
     nearCount.fill(0);
     contact.fill(0);
     for (let i = 0; i < n; i++)
@@ -554,13 +563,14 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
         this.remember(i, j, d);
         this.remember(j, i, d);
       }
-    // Spread along the rope so wear fades in and out instead of switching per particle.
+    // Repartido a lo largo de la soga, así el desgaste aparece y desaparece gradualmente en lugar
+    // de cambiar por partícula.
     for (let pass = 0; pass < 2; pass++)
       for (let i = 1; i < n - 1; i++)
         contact[i] = Math.max(contact[i], (contact[i - 1] + contact[i + 1]) * 0.4);
   }
 
-  /** Keeps j among i's NEAR closest parts of other rope, dropping the farthest when full. */
+  /** Mantiene j entre las NEAR partes de otra soga más cercanas a i, descartando la más lejana cuando está lleno. */
   private remember(i: number, j: number, d: number): void {
     const { near, nearCount, nearDist } = this;
     const o = i * NEAR;
@@ -575,7 +585,10 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
     nearDist[o + slot] = d;
   }
 
-  /** How much of a surface point's view is blocked by nearby rope it faces (0 open, 1 buried). */
+  /**
+   * Cuánto de la vista de un punto de la superficie está tapado por la soga cercana que tiene
+   * enfrente (0 libre, 1 enterrado).
+   */
   private occlusion(
     p: Float32Array,
     i: number,
@@ -595,11 +608,11 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
       const facing = (dx * nrm.x + dy * nrm.y + dz * nrm.z) / d;
       if (facing <= 0) continue;
       const u = Math.min(1, Math.max(0, (d - radius) / (1.5 * radius)));
-      occ += facing * (1 - u * u * (3 - 2 * u)); // smoothstep: no crease where the falloff starts
+      occ += facing * (1 - u * u * (3 - 2 * u)); // smoothstep: sin quiebre donde arranca la caída
     }
-    // The table occludes the underside too.
+    // La mesa también ocluye la parte de abajo.
     occ += Math.max(0, -nrm.y) * Math.max(0, 1 - (y - 0) / (2 * radius)) * 0.6;
-    return 1 - Math.exp(-1.6 * occ); // saturates softly, so packed spots shade in gradually
+    return 1 - Math.exp(-1.6 * occ); // satura suave, así los lugares apretados se sombrean de a poco
   }
 
   private updateGround(): void {
@@ -611,19 +624,19 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
     for (let k = 0; k < m; k++) {
       const x = centers[k * 3];
       const z = centers[k * 3 + 2];
-      const h = Math.max(0, centers[k * 3 + 1] - radius); // height above lying on the table
+      const h = Math.max(0, centers[k * 3 + 1] - radius); // altura por encima de estar apoyada en la mesa
       let sx = -tangents[k * 3 + 2];
       let sz = tangents[k * 3];
       const l = Math.hypot(sx, sz) || 1;
-      // Keep the strip's sides from swapping between samples, which draws thin fans.
+      // Evitar que los costados de la franja se intercambien entre muestras, lo que dibuja abanicos finos.
       if (sx * px + sz * pz < 0) {
         sx = -sx;
         sz = -sz;
       }
       px = sx;
       pz = sz;
-      // Wider and fainter as the rope lifts off: tight and dark where it nearly touches. Never
-      // wider than the bend it follows, or the inner edge folds over into a fan.
+      // Más ancha y más tenue a medida que la soga se levanta: apretada y oscura donde casi toca.
+      // Nunca más ancha que la curva que sigue, si no el borde interno se pliega en un abanico.
       const a = Math.max(k - 2, 0) * 3;
       const b = Math.min(k + 2, m - 1) * 3;
       const ax = tangents[a];
@@ -637,7 +650,7 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
       const w = Math.min(radius * Math.min(1.8, 1.2 + h / radius), 0.7 * bend);
       sx = (sx / l) * w;
       sz = (sz / l) * w;
-      // Where the rope runs steeply up or down its sideways direction is unreliable: fade out.
+      // Donde la soga sube o baja de forma empinada su dirección lateral no es confiable: desvanecer.
       const alpha =
         0.38 * Math.max(0, 1 - h / (2 * radius)) * Math.min(1, Math.max(0, (l - 0.5) * 3));
       const o = k * 3;
@@ -656,7 +669,7 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
     const pos = this.geometry.attributes.position as THREE.BufferAttribute;
     const nrm = this.geometry.attributes.normal as THREE.BufferAttribute;
     const start = this.hairs.geometry.attributes.instanceStart as THREE.InterleavedBufferAttribute;
-    const out = start.data.array as Float32Array; // per segment: start xyz, end xyz
+    const out = start.data.array as Float32Array; // por segmento: xyz de inicio, xyz de fin
     const { hairRoot, hairShape, tangents, m, n, contact, bodyHairs, tuftAt } = this;
     const face = this.cutFaces.geometry.attributes.position as THREE.BufferAttribute;
     const faceNrm = this.cutFaces.geometry.attributes.normal as THREE.BufferAttribute;
@@ -672,7 +685,7 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
           : m - 1
         : Math.min(Math.max((Math.floor(v / ringSize) % this.rings) - CAP, 0), m - 1);
       const [base, lean, curl, side, rise] = hairShape.subarray(h * 5, h * 5 + 5);
-      // Rope that rubs in the knot is a little fuzzier.
+      // La soga que roza en el nudo tiene un poco más de pelusa.
       const len = base * (0.9 + 0.3 * contact[Math.min(Math.round(k / SUB), n - 1)]);
       let px: number;
       let py: number;
@@ -681,7 +694,7 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
       let ny: number;
       let nz: number;
       if (tuft) {
-        // A point on the cut face: between two rim vertices, part way out from the centre.
+        // Un punto sobre la cara cortada: entre dos vértices del borde, a cierta distancia del centro.
         const a = tuftAt[(h - bodyHairs) * 3 + 1];
         const rho = tuftAt[(h - bodyHairs) * 3 + 2];
         const o = disc * perDisc;
@@ -706,18 +719,18 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
       const tx = tangents[k * 3];
       const ty = tangents[k * 3 + 1];
       const tz = tangents[k * 3 + 2];
-      // Sideways: across both the rope and the surface normal, for randomly angled fibres.
+      // Hacia el costado: perpendicular a la soga y a la normal de la superficie, para fibras en ángulos al azar.
       let bx = ny * tz - nz * ty;
       let by = nz * tx - nx * tz;
       let bz = nx * ty - ny * tx;
       if (bx * bx + by * by + bz * bz < 0.04) {
-        // On a cut face the normal runs along the rope; splay against the table's up instead.
+        // En una cara cortada la normal va a lo largo de la soga; abrir contra el arriba de la mesa en cambio.
         const l = Math.hypot(nz, nx) || 1;
         bx = -nz / l;
         by = 0;
         bz = nx / l;
       }
-      // Out from the surface and leaning along the rope; the tip bends further over.
+      // Hacia afuera de la superficie e inclinada a lo largo de la soga; la punta se dobla un poco más.
       const mx = px + (nx * rise + tx * lean + bx * side) * len * 0.5;
       const my = py + (ny * rise + ty * lean + by * side) * len * 0.5;
       const mz = pz + (nz * rise + tz * lean + bz * side) * len * 0.5;
@@ -727,7 +740,7 @@ export class RopeMesh extends THREE.Mesh<THREE.BufferGeometry, THREE.Material> {
         my + (ny * rise * (1 - Math.abs(curl)) + ty * (lean + curl) + by * side) * len * 0.5;
       const ez =
         mz + (nz * rise * (1 - Math.abs(curl)) + tz * (lean + curl) + bz * side) * len * 0.5;
-      // The root starts just under the surface, so the fibre grows out of the strand.
+      // La raíz arranca justo debajo de la superficie, así la fibra crece desde el cordón.
       const sink = 0.25 * len;
       out.set(
         [px - nx * sink, py - ny * sink, pz - nz * sink, mx, my, mz, mx, my, mz, ex, ey, ez],

@@ -1,9 +1,9 @@
 /**
- * Which way is up along the rope, so the strands stay put as it bends instead of spinning
- * around it. The first particle keeps the facing it started with, turned only by its own
- * tangent. The rest is parallel-transported from there, with no extra twist. Averaging twist
- * along the rope would treat the loop's writhe as twist of the whole rope, and the straight
- * tail on the table would slowly roll while the knot is tied.
+ * Hacia dónde es arriba a lo largo de la soga, así los cordones se quedan en su lugar cuando se
+ * curva en lugar de girar alrededor de ella. La primera partícula mantiene la orientación con la
+ * que arrancó, girada solo por su propia tangente. El resto se transporta en paralelo desde ahí,
+ * sin torsión extra. Promediar la torsión a lo largo de la soga trataría el retorcimiento del bucle
+ * como torsión de toda la soga, y la cola recta sobre la mesa rodaría despacio mientras se ata el nudo.
  */
 export class MaterialFrames {
   readonly normals: Float64Array;
@@ -15,7 +15,7 @@ export class MaterialFrames {
   constructor(n: number) {
     this.n = n;
     this.normals = new Float64Array(n * 3);
-    for (let i = 0; i < n; i++) this.normals[i * 3 + 1] = 1; // the rope starts along x, so up works
+    for (let i = 0; i < n; i++) this.normals[i * 3 + 1] = 1; // la soga arranca a lo largo de x, así que arriba sirve
     this.t = new Float64Array(n * 3);
     this.prevT = new Float64Array(n * 3);
     for (let i = 0; i < n; i++) this.prevT[i * 3] = 1;
@@ -34,7 +34,7 @@ export class MaterialFrames {
       t[i * 3 + 1] = dy / len;
       t[i * 3 + 2] = dz / len;
     }
-    // Standing end: turn only with its own tangent, so a loop ahead of it cannot roll it.
+    // Extremo fijo: girar solo con su propia tangente, así un bucle por delante no lo puede hacer rodar.
     rotate(tmp, N, 0, prevT, 0, t, 0);
     lay(N, t, 0, tmp);
     for (let i = 1; i < n; i++) {
@@ -45,7 +45,10 @@ export class MaterialFrames {
   }
 }
 
-/** Drops v's component along the tangent and stores a unit normal. Keeps the old normal if that vanishes. */
+/**
+ * Descarta la componente de v a lo largo de la tangente y guarda una normal unitaria. Conserva la
+ * normal vieja si esa se anula.
+ */
 function lay(normals: Float64Array, tangent: Float64Array, i: number, v: number[]): void {
   const o = i * 3;
   const tx = tangent[o];
@@ -62,7 +65,7 @@ function lay(normals: Float64Array, tangent: Float64Array, i: number, v: number[
   normals[o + 2] = z / len;
 }
 
-/** Writes v (at vi) turned by the smallest rotation that takes tangent `from` (at fi) to `to` (at ti). */
+/** Escribe v (en vi) girado por la rotación más chica que lleva la tangente `from` (en fi) a `to` (en ti). */
 function rotate(
   out: number[],
   v: Float64Array,

@@ -6,7 +6,7 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
     groups:
-      # One PR per week for routine bumps; major versions stay separate so they get a look.
+      # Un PR por semana para las actualizaciones de rutina; las versiones mayores van aparte para revisarlas.
       minor-and-patch:
         update-types: [minor, patch]
   - package-ecosystem: github-actions

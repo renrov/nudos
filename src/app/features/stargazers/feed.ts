@@ -1,12 +1,13 @@
 import type { Star } from "./rope";
 
 /**
- * The stargazer feed `tools/stargazers.mjs` writes: the first star's time (epoch seconds), then per
- * star [login, GitHub user id, seconds since the previous star].
+ * El feed de stargazers que escribe `tools/stargazers.mjs`: la hora de la primera estrella
+ * (segundos epoch), después, por cada estrella, [login, id de usuario de GitHub, segundos desde la
+ * estrella anterior].
  */
 export type Feed = { v: 1; t0: number; s: [login: string, id: number, dt: number][] };
 
-/** The feed → stars in the shape of GitHub's stargazers API, oldest first. */
+/** El feed → estrellas con la forma de la API de stargazers de GitHub, de la más vieja a la más nueva. */
 export function decodeFeed(feed: Feed): Star[] {
   let t = feed.t0;
   return feed.s.map(([login, id, dt]) => ({

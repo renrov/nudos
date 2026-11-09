@@ -132,7 +132,7 @@
   cursor: pointer;
 }
 
-/* On a phone the panel sits low, leaving the rope in view. */
+/* En un celular el panel queda abajo, así la soga sigue a la vista. */
 @media (max-width: 640px) {
   .panel {
     top: auto;

@@ -3,18 +3,19 @@ import type { Player } from "./playback/player";
 import { Timeline } from "./playback/timeline";
 import { DEFAULT_PHYSICS, type RopePhysics } from "./sim/rope";
 
-/** One knot being watched: its frames baking in a worker and the playback over them. */
+/** Un nudo que se está mirando: sus cuadros bakeándose en un worker y la reproducción sobre ellos. */
 export interface KnotSession {
   readonly knot: KnotDef;
   readonly timeline: Timeline;
   readonly player: Player;
-  /** Stops the bake; call when the knot is left or re-baked. */
+  /** Frena el bakeo; llamalo cuando se deja el nudo o se vuelve a bakear. */
   dispose(): void;
 }
 
 /**
- * Starts baking `knot` and feeds the progress to `player`. Browser only (it starts a worker);
- * the player itself can be made anywhere, so prerendered pages show the same first state.
+ * Empieza a bakear `knot` y le pasa el progreso a `player`. Solo en el navegador (arranca un
+ * worker); el player en sí se puede crear en cualquier lado, así las páginas prerenderizadas
+ * muestran el mismo estado inicial.
  */
 export function createKnotSession(
   knot: KnotDef,

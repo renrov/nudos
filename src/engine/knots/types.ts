@@ -1,27 +1,30 @@
 export type Vec3 = [number, number, number];
 
-/** A point a guide passes through. Leave out `p` to hold still at the previous point. */
+/** Un punto por el que pasa una guía. Dejá afuera `p` para quedarse quieta en el punto anterior. */
 export interface GuideKey {
   t: number;
   p?: Vec3;
 }
 
 /**
- * An invisible pin that moves one point of the rope. The physics does the rest:
- * the rope sags, drags on the table, collides with itself and cinches.
+ * Un pin invisible que mueve un punto de la soga. La física hace el resto: la soga cuelga, se
+ * arrastra por la mesa, choca consigo misma y se ajusta.
  */
 export interface Guide {
-  /** Index into `KnotDef.ropes`. Leave it out for the first rope. */
+  /** Índice en `KnotDef.ropes`. Dejalo afuera para la primera soga. */
   rope?: number;
-  /** Where on the rope: 0 is the standing end, 1 is the working end. */
+  /** Dónde sobre la soga: 0 es el extremo fijo, 1 es la punta. */
   at: number;
-  /** Seconds. The guide grabs the rope wherever it is at this moment. */
+  /** Segundos. La guía agarra la soga donde sea que esté en ese momento. */
   grab: number;
-  /** Targets after the grab, in time order. The guide lets go at the last key. */
+  /** Objetivos después de agarrar, en orden temporal. La guía suelta en la última key. */
   path: GuideKey[];
-  /** Softness of the pull (XPBD compliance, m/N). Leave it out for a firm grip; larger values pull like a spring. */
+  /**
+   * Suavidad del tirón (compliance de XPBD, m/N). Dejalo afuera para un agarre firme; valores más
+   * grandes tiran como un resorte.
+   */
   compliance?: number;
-  /** Strongest pull in newtons. Leave it out for a light hand; cinching stiff rope needs more. */
+  /** Tirón máximo en newtons. Dejalo afuera para una mano liviana; ajustar una soga rígida necesita más. */
   force?: number;
 }
 
@@ -29,17 +32,21 @@ export interface RopeDef {
   length: number;
   radius: number;
   /**
-   * Where the rope starts, as a polyline from its standing end. It should be as long as `length`
-   * and rest on the table (y = radius) or hang in the air to drop; a straight line is the usual start.
+   * Dónde arranca la soga, como una polilínea desde su extremo fijo. Tendría que ser tan larga como
+   * `length` y apoyar sobre la mesa (y = radius) o colgar en el aire para caer; una línea recta es
+   * el inicio habitual.
    */
   start: Vec3[];
-  /** Rope colour, e.g. "#2f5fb3". Leave it out for natural tan; give each rope of a bend its own. */
+  /**
+   * Color de la soga, por ejemplo "#2f5fb3". Dejalo afuera para el beige natural; dale a cada soga
+   * de un empalme su propio color.
+   */
   color?: string;
 }
 
-/** A fixed object for rope to tie around: a pole, ring segment or rail. Never moves. */
+/** Un objeto fijo alrededor del cual atar la soga: un poste, un segmento de aro o una barra. Nunca se mueve. */
 export interface Prop {
-  /** A capsule is the axis `a`→`b` swept by `radius` with round ends; a cylinder has flat ends. */
+  /** Una cápsula es el eje `a`→`b` barrido por `radius` con extremos redondeados; un cilindro tiene extremos planos. */
   kind: "capsule" | "cylinder";
   a: Vec3;
   b: Vec3;
@@ -52,11 +59,13 @@ export interface Step {
 }
 
 /**
- * Everything that makes one knot. Adding a knot means adding one of these;
- * ropes start along their `start` polylines and the table is at y = 0.
+ * Todo lo que forma un nudo. Agregar un nudo es agregar uno de estos; las sogas arrancan a lo largo
+ * de sus polilíneas `start` y la mesa está en y = 0.
  */
 export interface KnotDef {
   id: string;
+  /** La parte de la URL de su página, en castellano: /nudos/<slug>/. El `id` nombra sus archivos. */
+  slug: string;
   name: string;
   summary: string;
   ropes: RopeDef[];

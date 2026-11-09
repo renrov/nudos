@@ -1,52 +1,66 @@
-// Shoots each knot's finished state: public/og/<id>.jpg, 1200×630, used as the share preview
-// (og:image) and the picker card. Needs the dev server: `pnpm dev`, then `pnpm thumbs` (or
-// `pnpm thumbs http://localhost:5177`; `--knot=<id>` shoots one knot, `--headed` shows the browser). Run it again after adding a knot or changing how one ends.
+// Fotografía el estado terminado de cada nudo: public/og/<id>.jpg, 1200×630, que se usa como vista
+// previa para compartir (og:image) y como tarjeta del selector. Necesita el servidor de desarrollo:
+// `pnpm dev`, después `pnpm thumbs` (o `pnpm thumbs http://localhost:5177`; `--knot=<id>`
+// fotografía un solo nudo, `--headed` muestra el navegador). Volvé a correrlo después de agregar un
+// nudo o de cambiar cómo termina uno.
 import { mkdirSync } from "node:fs";
 import { chromium } from "@playwright/test";
 
 const args = process.argv.slice(2);
 const flag = (name) => args.find((a) => a.startsWith(`--${name}`))?.split("=")[1] ?? false;
 const base = args.find((a) => !a.startsWith("--")) ?? "http://localhost:5173";
-const only = flag("knot"); // --knot=<id>: shoot just that knot
-const headed = args.includes("--headed"); // watch the browser draw
+const only = flag("knot"); // --knot=<id>: fotografiar solo ese nudo
+const headed = args.includes("--headed"); // mirar cómo dibuja el navegador
 const out = new URL("../public/og/", import.meta.url);
 mkdirSync(out, { recursive: true });
 
 const browser = await chromium.launch({ headless: !headed });
-// Baking runs in a small window, which headless Chromium draws quickly in software; the shot is
-// taken in a big one (scene scale follows the window height), cropped 600×315 around the knot at
-// 2× pixels: the 1200×630 Open Graph size. The renderer caps its pixel ratio at 2.
+// El bakeo corre en una ventana chica, que Chromium headless dibuja rápido por software; la foto se
+// saca en una grande (la escala de la escena sigue a la altura de la ventana), recortada a 600×315
+// alrededor del nudo a 2× píxeles: el tamaño de Open Graph de 1200×630. El renderer limita su pixel ratio a 2.
 const SMALL = { width: 400, height: 300 };
 const BIG = { width: 1200, height: 900 };
-// Knots too long for that crop: crop this many times wider and taller at fewer pixels per point,
-// so the picture is still 1200×630.
+// Nudos demasiado largos para ese recorte: recortar esta cantidad de veces más ancho y más alto con
+// menos píxeles por punto, así la imagen sigue siendo de 1200×630.
 const WIDE = { "daisy-chain": 1.6 };
 const index = await browser.newPage({ viewport: SMALL });
 await index.goto(base);
-// The picker's cards link to /knots/<id>/.
-const ids = await index.$$eval("dialog a[href^='/knots/']", (links) =>
-  links.map((a) => decodeURIComponent(new URL(a.href).pathname.split("/")[2])),
+// Las tarjetas del selector enlazan a /nudos/<slug>/ y muestran /og/<id>.jpg: de ahí salen la
+// página de cada nudo y el nombre de su imagen.
+const cards = await index.$$eval("dialog a[href^='/nudos/']", (links) =>
+  links.map((a) => ({
+    href: new URL(a.href).pathname,
+    id: decodeURIComponent(
+      a
+        .querySelector("img")
+        .getAttribute("src")
+        .split("/")
+        .pop()
+        .replace(/\.jpg$/, ""),
+    ),
+  })),
 );
 
 await index.close();
 
-for (const id of ids.filter((id) => !only || id === only)) {
+for (const { id, href } of cards.filter((c) => !only || c.id === only)) {
   const k = WIDE[id] ?? 1;
   const [W, H] = [600 * k, 315 * k];
-  const big = { width: BIG.width * k, height: BIG.height }; // wider, same scale: it follows the height
+  const big = { width: BIG.width * k, height: BIG.height }; // más ancha, misma escala: sigue a la altura
   const page = await browser.newPage({ viewport: SMALL, deviceScaleFactor: 2 / k });
-  await page.goto(`${base}/knots/${id}/`);
+  await page.goto(`${base}${href}`);
   await page.waitForSelector("[data-baked=true]", { timeout: 120_000 });
-  // Jump to the end; playback stops there, so the finished knot stays put.
-  await page.focus("input[aria-label=Timeline]");
+  // Saltar al final; la reproducción se detiene ahí, así el nudo terminado se queda quieto.
+  await page.focus("input[aria-label='Línea de tiempo']");
   await page.keyboard.press("End");
-  // The canvas sits inside the page's layout, so hide everything else and show the canvas again.
+  // El canvas está adentro del layout de la página, así que hay que ocultar todo lo demás y volver
+  // a mostrar el canvas.
   await page.addStyleTag({
     content: "body * { visibility: hidden !important; } canvas { visibility: visible !important; }",
   });
   await page.setViewportSize(big);
   await page.waitForTimeout(2000);
-  // Centre the crop on the knot: the column and the row with the most rope in them.
+  // Centrar el recorte en el nudo: la columna y la fila con más soga.
   const shot = (await page.screenshot({ timeout: 120_000 })).toString("base64");
   const [cx, cy, right] = await page.evaluate(
     async ([png, across]) => {
@@ -71,7 +85,7 @@ for (const id of ids.filter((id) => !only || id === only)) {
             rows[y]++;
           }
         }
-      // Smooth over about a knot's width so one thick strand does not win.
+      // Suavizar a lo largo de más o menos el ancho de un nudo, así un solo tramo grueso no gana.
       const peak = (a, r) => {
         let best = 0,
           at = 0;
@@ -93,10 +107,11 @@ for (const id of ids.filter((id) => !only || id === only)) {
       ];
     },
     [shot, k === 1 ? 160 : (0.4 * W * 2) / k],
-  ); // a wide knot: the stretch of the crop's width with the most rope
+  ); // un nudo ancho: el tramo del ancho del recorte con más soga
   let x = Math.min(Math.max(cx - W / 2, 0), big.width - W);
-  // A rope that ends in the picture (a loop, a tail) must not be cut off: slide right to fit it, but keep the knot in.
-  // A wide knot stays centred instead: its long tail may run off the edge.
+  // Una soga que termina dentro de la imagen (un bucle, una cola) no se puede cortar: correr a la
+  // derecha para que entre, pero dejando el nudo adentro.
+  // Un nudo ancho queda centrado en cambio: su cola larga puede salirse del borde.
   if (right < big.width - 1 && k === 1)
     x = Math.min(Math.max(x, right + 20 - W), cx - 100, big.width - W);
   const y = Math.min(Math.max(cy - H / 2, 0), big.height - H);

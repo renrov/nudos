@@ -1,4 +1,4 @@
-# Packages allowed to run install scripts (they download their platform binaries).
+# Paquetes que pueden correr scripts de instalación (descargan los binarios de su plataforma).
 allowBuilds:
   esbuild: true
   workerd: true

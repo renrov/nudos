@@ -1,97 +1,103 @@
 import { KNOT_KINDS, type KnotKind, LEAD, jitter, knotFor, ropeLayout } from "./layout";
 
-/** One entry of GitHub's stargazers API (`Accept: application/vnd.github.star+json`). */
+/** Una entrada de la API de stargazers de GitHub (`Accept: application/vnd.github.star+json`). */
 export type Star = {
   starred_at: string;
   user: { login: string; id: number; avatar_url: string; html_url: string };
 };
 
-/** How many stars were given by `time` (stars sorted by date). */
+/** Cuántas estrellas se dieron hasta `time` (estrellas ordenadas por fecha). */
 export const countAt = (stars: readonly Star[], time: number) => {
   let n = 0;
   while (n < stars.length && Date.parse(stars[n].starred_at) <= time) n++;
   return n;
 };
 
-/** The band the rope may use, in canvas px (below the intro panel, above the timeline bar). */
+/**
+ * La franja que puede usar la soga, en px del canvas (debajo del panel de intro, arriba de la barra
+ * de la línea de tiempo).
+ */
 export type Band = { top: number; bottom: number };
 
-// Pictures of the real rope, each finished knot and the rope's end, made by
-// tools/stargazer-sprites.mjs at PX pixels per rope diameter; the end sits TIP diameters into
-// its picture. Drawing them is far cheaper than building the 3D rope.
+// Imágenes de la soga real, de cada nudo terminado y de la punta de la soga, hechas por
+// tools/stargazer-sprites.mjs a PX píxeles por diámetro de soga; la punta queda TIP diámetros
+// adentro de su imagen. Dibujarlas es muchísimo más barato que armar la soga en 3D.
 const PX = 32;
 const TIP = 5;
 const image = (src: string) => Object.assign(new Image(), { src });
 const picture = (name: string) => `/stargazers/${name}.png`;
-/** Every picture the rope draws, so the page can start loading them before the rope starts. */
+/** Todas las imágenes que dibuja la soga, así la página puede empezar a cargarlas antes de que arranque la soga. */
 export const PICTURES = ["rope", "tip", ...KNOT_KINDS.map((k) => k.id)].map(picture);
-const AVATAR = 2.4; // avatar radius, in rope diameters: bigger than a knot, so people come first
-const SPARE = 7; // loop size in the loose pile of rope left for new stars, in rope diameters
+const AVATAR = 2.4; // radio del avatar, en diámetros de soga: más grande que un nudo, así la gente va primero
+const SPARE = 7; // tamaño de las vueltas en la pila suelta de soga que queda para las estrellas nuevas, en diámetros de soga
 const ACCENT = "#b9522c";
-const POP = 420; // ms for a new knot to cinch tight and its avatar to pop in
-const LAYING = 24; // rope still settling behind its paying-out end, in rope diameters
-const REVEAL = 100; // rope still to pay out (the slow end of a replay) when the pile starts sliding into view, in rope diameters
-const MORE = 90; // the most extra rope the pile shows while stars are still to come, in rope diameters
-const PAY = 0.012; // per ms: how briskly the rope's end pays out to where the knots need it
+/** La fuente de la página (ver global.css), para los textos que se dibujan en el canvas. */
+const FONT = '"Archivo", ui-sans-serif, system-ui, sans-serif';
+const POP = 420; // ms para que un nudo nuevo se ajuste y su avatar aparezca
+const LAYING = 24; // soga que todavía se está acomodando detrás de la punta que se va soltando, en diámetros de soga
+const REVEAL = 100; // soga que falta soltar (el final lento de una repetición) cuando la pila empieza a entrar en cuadro, en diámetros de soga
+const MORE = 90; // lo máximo de soga extra que muestra la pila mientras faltan estrellas, en diámetros de soga
+const PAY = 0.012; // por ms: qué tan rápido se suelta la punta de la soga hasta donde la necesitan los nudos
 const CALM =
   typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
-const PULSE = 1800; // ms of rings round a found knot
-/** Frame-rate-independent easing: the share of the way to close in `dt` ms, `rate` per 60 Hz frame. */
+const PULSE = 1800; // ms de anillos alrededor de un nudo encontrado
+/** Easing independiente del frame rate: la proporción del camino a cerrar en `dt` ms, `rate` por cuadro de 60 Hz. */
 const ease = (rate: number, dt: number) => 1 - (1 - rate) ** (dt / (1000 / 60));
-/** Overshoots a little and settles, like a knot snapping tight. */
+/** Se pasa un poco y se acomoda, como un nudo que se cierra de golpe. */
 const popOut = (u: number) => 1 + 2.2 * (u - 1) ** 3 + 1.2 * (u - 1) ** 2;
 
 /**
- * The stars as one long rope wandering across the page, oldest first: each star is a small
- * overhand knot with the stargazer's avatar tied beside it. Knots crowd together in a burst of
- * stars and spread apart in a lull (`gapFor`); past the newest star a loose pile of spare rope
- * waits for the next ones. It opens on the newest stars and swipes (or wheels) back through the older ones.
+ * Las estrellas como una sola soga larga que serpentea por la página, de la más vieja a la más
+ * nueva: cada estrella es un pequeño nudo simple con el avatar del stargazer atado al lado. Los
+ * nudos se amontonan en una ráfaga de estrellas y se separan en una pausa (`gapFor`); pasando la
+ * estrella más nueva, una pila suelta de soga de reserva espera a las próximas. Abre en las
+ * estrellas más nuevas y se desliza (o se scrollea con la rueda) hacia atrás por las más viejas.
  *
- * It only redraws when something moved or changed, so an idle page costs nothing. Runs its own
- * loop until `dispose`.
+ * Solo vuelve a dibujar cuando algo se movió o cambió, así una página quieta no cuesta nada. Corre
+ * su propio loop hasta `dispose`.
  */
 export class StarRope {
   private ctx: CanvasRenderingContext2D;
   private w = 0;
   private h = 0;
   private dpr = 1;
-  private t = 7; // rope diameter on screen, px
-  private y0 = 0; // the middle of the rope's wander
-  private sway = 0; // how far it wanders up and down
+  private t = 7; // diámetro de la soga en pantalla, px
+  private y0 = 0; // el centro del serpenteo de la soga
+  private sway = 0; // cuánto sube y baja al serpentear
   private stars: Star[] = [];
-  private loaded = false; // no rope until the feed arrives, then at least the bare rope and spare
+  private loaded = false; // no hay soga hasta que llega el feed; después, por lo menos la soga pelada y la de reserva
   private times: number[] = [];
-  private shown = 0; // stars tied so far
-  private reach = 0; // where the drawn rope ends, in diameters: it pays out after the layout's end
-  private reachV = 0; // diameters per ms
-  private payTo: number | null = null; // a replay's own rope end, in diameters, so it pays out evenly
-  private laid = false; // whether the first stars have been laid down yet
-  private fullEnd = 0; // where the rope ends once every star is tied, in diameters
-  private tied = 0; // knots the paid-out rope has reached, so drawn
+  private shown = 0; // estrellas atadas hasta ahora
+  private reach = 0; // dónde termina la soga dibujada, en diámetros: se va soltando después del final del layout
+  private reachV = 0; // diámetros por ms
+  private payTo: number | null = null; // la punta propia de la soga durante una repetición, en diámetros, para que se suelte de forma pareja
+  private laid = false; // si ya se pusieron las primeras estrellas
+  private fullEnd = 0; // dónde termina la soga una vez atadas todas las estrellas, en diámetros
+  private tied = 0; // nudos a los que ya llegó la soga soltada, o sea, dibujados
   private layoutCache: ReturnType<typeof ropeLayout> = { knots: [], end: 0 };
-  private born = new Map<number, number>(); // when each knot was tied, for its pop-in
+  private born = new Map<number, number>(); // cuándo se ató cada nudo, para su aparición
   private faces = new Map<number, { img: HTMLImageElement; cut: HTMLCanvasElement | null }>();
-  private spots: { i: number; x: number; y: number }[] = []; // avatars drawn last frame, for hover
+  private spots: { i: number; x: number; y: number }[] = []; // avatares dibujados en el último cuadro, para el hover
   private hovered = -1;
-  private slot: { x: number; y: number } | null = null; // the empty spot for the next star's avatar
-  private hoverGrow = 0; // 0 → 1 as the hovered avatar grows
-  private found = -1; // the star someone searched for: centred and marked with its number
+  private slot: { x: number; y: number } | null = null; // el lugar vacío para el avatar de la próxima estrella
+  private hoverGrow = 0; // 0 → 1 a medida que crece el avatar bajo el puntero
+  private found = -1; // la estrella que alguien buscó: centrada y marcada con su número
   private foundAt = 0;
-  private target: number | null = null; // scroll position to glide to
-  private scroll = 0; // rope position (px along it) at the screen's left edge
-  private velocity = 0; // px per ms, after a swipe
-  private lastLead = Number.NaN; // the follow target last frame, so the camera moves with it instead of trailing
-  private follow = true; // keep the newest stars and the spare rope in view as stars arrive
+  private target: number | null = null; // posición de scroll hacia la que deslizarse
+  private scroll = 0; // posición sobre la soga (px a lo largo de ella) en el borde izquierdo de la pantalla
+  private velocity = 0; // px por ms, después de un deslizamiento
+  private lastLead = Number.NaN; // el objetivo a seguir en el último cuadro, así la cámara se mueve con él en lugar de quedar atrás
+  private follow = true; // mantener a la vista las estrellas más nuevas y la soga de reserva a medida que llegan estrellas
   private drag: { x: number; scroll: number; moved: number; last: number; at: number } | null =
     null;
-  private strip: HTMLCanvasElement | null = null; // the rope picture twice over, so slices never wrap
+  private strip: HTMLCanvasElement | null = null; // la imagen de la soga dos veces seguidas, así los cortes nunca dan la vuelta
   private knots = Object.fromEntries(KNOT_KINDS.map((k) => [k.id, image(picture(k.id))])) as Record<
     KnotKind["id"],
     HTMLImageElement
   >;
   private kinds: KnotKind[] = [];
   private tip = image(picture("tip"));
-  private dirty = true; // something changed: draw the next frame
+  private dirty = true; // algo cambió: dibujar el próximo cuadro
   private last = 0;
   private frame = 0;
   private resize = new ResizeObserver(() => this.layout());
@@ -114,6 +120,8 @@ export class StarRope {
     };
     for (const img of [...Object.values(this.knots), this.tip])
       img.onload = () => (this.dirty = true);
+    // Si la fuente llega después del primer cuadro, volver a dibujar las etiquetas con ella.
+    void document.fonts?.ready.then(() => (this.dirty = true));
 
     this.on("pointerdown", (e: PointerEvent) => {
       canvas.setPointerCapture(e.pointerId);
@@ -124,7 +132,7 @@ export class StarRope {
       const d = this.drag;
       if (!d) return;
       d.moved = Math.max(d.moved, Math.abs(e.clientX - d.x));
-      // A smoothed release speed, so a flick carries on at the speed it was going.
+      // Una velocidad de soltado suavizada, así un deslizamiento rápido sigue a la velocidad que traía.
       const v = (d.last - e.clientX) / Math.max(e.timeStamp - d.at, 1);
       this.velocity = this.velocity * 0.6 + v * 0.4;
       [d.last, d.at] = [e.clientX, e.timeStamp];
@@ -134,7 +142,7 @@ export class StarRope {
     });
     this.on("pointerup", (e: PointerEvent) => {
       if (this.drag && (this.drag.moved < 5 || e.timeStamp - this.drag.at > 80)) this.velocity = 0;
-      // Cleared after the click that follows, so the click can tell a swipe from a tap.
+      // Se limpia después del clic que sigue, así el clic puede distinguir un deslizamiento de un toque.
       setTimeout(() => (this.drag = null));
     });
     this.on("wheel", (e: WheelEvent) => {
@@ -168,7 +176,7 @@ export class StarRope {
     for (const [type, fn] of this.listeners) this.canvas.removeEventListener(type, fn);
   }
 
-  /** Whether the press that just ended was a swipe rather than a tap. */
+  /** Si el toque que acaba de terminar fue un deslizamiento y no un toque simple. */
   get swiped() {
     return (this.drag?.moved ?? 0) >= 5;
   }
@@ -183,20 +191,21 @@ export class StarRope {
   }
 
   /**
-   * Show the first `n` stars: the rope grows knot by knot, each cinching tight, and the view
-   * follows. A replay also passes how far along the rope (diameters) it has got, so the rope pays
-   * out smoothly between knots instead of a knot's gap at a time.
+   * Mostrar las primeras `n` estrellas: la soga crece nudo por nudo, cada uno ajustándose, y la
+   * vista la sigue. Una repetición también pasa cuánto avanzó sobre la soga (en diámetros), así la
+   * soga se suelta suave entre nudos en lugar de saltar de a un hueco de nudo.
    */
   setCount(n: number, along?: number) {
     this.payTo = along === undefined ? null : along + LEAD;
     this.dirty = true;
     if (n === this.shown) return;
-    this.tied = Math.min(this.tied, n); // going back: those knots untie; new ones tie as the rope reaches them
+    this.tied = Math.min(this.tied, n); // para atrás: esos nudos se desatan; los nuevos se atan cuando la soga llega a ellos
     this.follow = true;
     this.shown = n;
     this.relayout();
     if (!this.laid) {
-      // The first stars shown are already on the rope when the page opens: no paying out to them.
+      // Las primeras estrellas que se muestran ya están en la soga cuando abre la página: no hay
+      // que ir soltando soga hasta ellas.
       [this.laid, this.reach, this.reachV, this.tied] = [
         true,
         this.payTo ?? this.layoutCache.end,
@@ -206,7 +215,7 @@ export class StarRope {
     }
   }
 
-  /** Glide to star `i` (it must be shown), centre it and mark it with its knot number. */
+  /** Deslizarse hasta la estrella `i` (tiene que estar mostrada), centrarla y marcarla con su número de nudo. */
   find(i: number) {
     const { knots } = this.layoutCache;
     if (i < 0 || i >= knots.length) return;
@@ -217,7 +226,7 @@ export class StarRope {
     this.target = knots[i] * this.t - this.w / 2;
   }
 
-  /** The star whose avatar is under a point (canvas px), or null. */
+  /** La estrella cuyo avatar está bajo un punto (px del canvas), o null. */
   pick(mx: number, my: number) {
     let best = (this.t * AVATAR + 3) ** 2;
     let hit = -1;
@@ -229,7 +238,7 @@ export class StarRope {
     return hit === -1 ? null : this.stars[hit];
   }
 
-  /** Whether a point (canvas px) is on the empty spot waiting for the next star. */
+  /** Si un punto (px del canvas) está sobre el lugar vacío que espera a la próxima estrella. */
   overSlot(mx: number, my: number) {
     const s = this.slot;
     return !!s && (s.x - mx) ** 2 + (s.y - my) ** 2 < (this.t * AVATAR + 3) ** 2;
@@ -242,33 +251,33 @@ export class StarRope {
 
   private layout() {
     this.dpr = devicePixelRatio || 1;
-    if (!this.w) this.scroll = -this.canvas.clientWidth / 2; // first size: the rope starts mid-screen
+    if (!this.w) this.scroll = -this.canvas.clientWidth / 2; // primer tamaño: la soga arranca a mitad de pantalla
     this.w = this.canvas.clientWidth;
     this.h = this.canvas.clientHeight;
     this.canvas.width = this.w * this.dpr;
     this.canvas.height = this.h * this.dpr;
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     this.t = this.w < 600 ? 6 : 7;
-    this.faces.forEach((f) => (f.cut = null)); // re-cut at the new size
+    this.faces.forEach((f) => (f.cut = null)); // volver a cortar al tamaño nuevo
     this.fit();
     this.dirty = true;
   }
 
-  /** Fit the rope's wander to the band, which changes when the intro panel grows. */
+  /** Ajusta el serpenteo de la soga a la franja, que cambia cuando crece el panel de intro. */
   private fit() {
     const { top, bottom } = this.band();
     const y0 = (top + bottom) / 2;
-    // Room above and below for a knot, its tie and its avatar.
+    // Lugar arriba y abajo para un nudo, su atadura y su avatar.
     const sway = Math.max(0, (bottom - top) / 2 - this.t * (AVATAR * 2 + 2.5));
     if (y0 !== this.y0 || sway !== this.sway) [this.y0, this.sway, this.dirty] = [y0, sway, true];
   }
 
-  /** Moves the view on by `dt` ms; returns whether anything is still moving. */
+  /** Avanza la vista `dt` ms; devuelve si algo se sigue moviendo. */
   private step(now: number, dt: number) {
     this.fit();
     const before = this.scroll;
-    // The rope's end follows the layout on a critically damped spring, so it pays out and draws
-    // back smoothly however the layout jumps; knots tie as it reaches them.
+    // La punta de la soga sigue al layout con un resorte con amortiguamiento crítico, así se suelta
+    // y se recoge suave aunque el layout salte; los nudos se atan cuando llega a ellos.
     const { knots } = this.layoutCache;
     const goal = this.payTo ?? this.layoutCache.end;
     if (CALM) [this.reach, this.reachV] = [goal, 0];
@@ -282,24 +291,25 @@ export class StarRope {
     while (this.tied < Math.min(this.shown, knots.length) && knots[this.tied] <= this.reach - 2)
       this.born.set(this.tied++, now);
     const end = this.reach * this.t;
-    // A rope shorter than the screen sits centred; a longer one can swipe its start to mid-screen.
+    // Una soga más corta que la pantalla queda centrada; una más larga puede deslizar su inicio
+    // hasta la mitad de la pantalla.
     const min = -this.w / 2;
     const over = end + SPARE * 4.4 * this.t - this.w;
     const max = over > 0 ? over : over / 2;
-    // Following a replay, the pile waits just off the right edge and slides into view over the
-    // last few ties, as the rope still to come runs out.
+    // Durante una repetición, la pila espera justo afuera del borde derecho y entra en cuadro a lo
+    // largo de los últimos nudos, mientras se acaba la soga que falta.
     const u = Math.min(Math.max(this.fullEnd - this.reach, 0) / REVEAL, 1);
     const lead = Math.max(max - u * u * (3 - 2 * u) * SPARE * 6.4 * this.t, min);
     if (this.target !== null) {
       const goal = Math.min(Math.max(this.target, min), max);
       this.scroll += (goal - this.scroll) * ease(0.1, dt);
     } else if (this.follow) {
-      // Carry the view along with the paying-out rope, then close what's left, so it doesn't trail.
+      // Llevar la vista junto con la soga que se va soltando y después cerrar lo que queda, así no queda atrás.
       this.scroll += lead - this.lastLead || 0;
       this.scroll += (lead - this.scroll) * ease(0.12, dt);
     } else if (!this.drag) {
       this.scroll += this.velocity * dt;
-      this.velocity *= Math.exp(-dt / 325); // a flick glides out over about a second
+      this.velocity *= Math.exp(-dt / 325); // un deslizamiento rápido se frena a lo largo de más o menos un segundo
       if (Math.abs(this.velocity) < 0.01) this.velocity = 0;
       if (this.scroll < min) this.scroll += (min - this.scroll) * ease(0.2, dt);
       if (this.scroll > max) this.scroll += (max - this.scroll) * ease(0.2, dt);
@@ -319,13 +329,14 @@ export class StarRope {
   }
 
   /**
-   * The rope's wander: a few slow waves of different lengths, so it never repeats or reads as a
-   * pattern. It lies still.
+   * El serpenteo de la soga: unas pocas ondas lentas de distintos largos, así nunca se repite ni se
+   * lee como un patrón. Queda quieta.
    */
   private wander(s: number) {
     const t = this.t;
-    // The last stretch before the end is still being laid: it runs level into the pile and
-    // settles into its waves as more rope pays out, instead of the end whipping up and down them.
+    // El último tramo antes de la punta todavía se está tendiendo: entra derecho a la pila y se
+    // acomoda en sus ondas a medida que se suelta más soga, en lugar de que la punta latiguee
+    // subiendo y bajando por ellas.
     const u = Math.min(Math.max((this.reach * t - s) / (LAYING * t), 0), 1);
     return (
       this.y0 +
@@ -339,13 +350,13 @@ export class StarRope {
     );
   }
 
-  /** Screen point and angle of the rope `s` px along it. */
+  /** Punto en pantalla y ángulo de la soga a `s` px a lo largo de ella. */
   private point(s: number): [number, number, number] {
     const y = this.wander(s);
     return [s - this.scroll, y, Math.atan(this.wander(s + 1) - y)];
   }
 
-  /** Star `i`'s avatar cut into a circle once, at `r` px, so drawing it is one plain copy. */
+  /** El avatar de la estrella `i` recortado en un círculo una sola vez, a `r` px, así dibujarlo es una copia simple. */
   private face(i: number, r: number) {
     let f = this.faces.get(i);
     if (!f) {
@@ -355,7 +366,7 @@ export class StarRope {
       this.faces.set(i, f);
     }
     if (!f.cut && f.img.complete && f.img.naturalWidth) {
-      const size = Math.ceil(r * 2 * this.dpr * 1.6); // room for the hover and found sizes
+      const size = Math.ceil(r * 2 * this.dpr * 1.6); // lugar para los tamaños de hover y de encontrado
       const cut = document.createElement("canvas");
       cut.width = cut.height = size;
       const c = cut.getContext("2d")!;
@@ -378,7 +389,7 @@ export class StarRope {
     const from = Math.max(this.scroll - t * 6, 0);
     const to = Math.min(this.scroll + this.w + t * 6, end);
 
-    /** One slice of the rope picture from (x0, y0) to (x1, y1), `s` px into its pattern. */
+    /** Una tajada de la imagen de la soga de (x0, y0) a (x1, y1), `s` px adentro de su patrón. */
     const lay = (x0: number, y0: number, x1: number, y1: number, s: number) => {
       if (!strip) return;
       if (Math.max(x0, x1) < -t * 2 || Math.min(x0, x1) > this.w + t * 2) return;
@@ -408,19 +419,20 @@ export class StarRope {
     };
     const reset = () => ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
 
-    // The rope.
+    // La soga.
     for (let s = from; s < to; s += t * 2) {
       const [x0, y0] = this.point(s);
       const [x1, y1] = this.point(Math.min(s + t * 2, to));
       lay(x0, y0, x1, y1, s);
     }
-    // Spare rope dropped in a loose pile past the newest knot: uneven loops that wander and
-    // cross, as rope lands when it's let fall. While stars are still to come it holds more rope,
-    // and it unwinds loop by loop as rope pays out: where the rope leaves it travels round the
-    // loops, which otherwise lie still, and pulling tugs the loops nearest that point.
+    // Soga de reserva tirada en una pila suelta pasando el nudo más nuevo: vueltas desparejas que
+    // serpentean y se cruzan, como cae la soga cuando la soltás. Mientras faltan estrellas guarda
+    // más soga, y se desenrolla vuelta por vuelta a medida que se suelta: el punto por donde sale
+    // la soga recorre las vueltas, que si no quedan quietas, y al tirar se arrastran las vueltas
+    // más cercanas a ese punto.
     const [ex, ey, ea] = this.point(end);
     const R = SPARE * t;
-    // The pile's top meets the rope's height, so the rope runs straight into it.
+    // La parte de arriba de la pila coincide con la altura de la soga, así la soga entra derecho.
     const [px, py] = [ex + R * 0.9, ey + R * 0.8];
     const loop = (a: number): [number, number] => {
       const r = R * (1 + 0.22 * Math.sin(1.3 * a + 0.7) + 0.12 * Math.sin(2.9 * a + 2.1));
@@ -428,15 +440,15 @@ export class StarRope {
       const cy = py + t * 1.6 * Math.cos(0.6 * a + 0.4);
       return [cx - r * Math.cos(a), cy - r * 0.8 * Math.sin(a)];
     };
-    const START = Math.PI / 2; // the top of the first loop, heading right like the rope coming in
+    const START = Math.PI / 2; // la parte de arriba de la primera vuelta, yendo hacia la derecha como la soga que entra
     const STEP = 0.1;
-    const toCome = Math.max(this.fullEnd - this.reach, 0); // diameters still to pay out
-    const a0 = START - Math.min(toCome, MORE) / SPARE; // where the rope leaves the pile
+    const toCome = Math.max(this.fullEnd - this.reach, 0); // diámetros que faltan soltar
+    const a0 = START - Math.min(toCome, MORE) / SPARE; // por dónde sale la soga de la pila
     const a1 = START + Math.PI * 2 * 4.6;
     const [ox, oy] = loop(a0);
     const pull = Math.hypot(ex - ox, ey - oy) || 1;
     const tug = Math.min(Math.abs(this.reachV) / 0.3, 1) * t * 1.8;
-    // Angles on a fixed grid (plus the exit itself), so the loops' outline doesn't shimmer.
+    // Ángulos sobre una grilla fija (más la salida misma), así el contorno de las vueltas no titila.
     const angles = [a0];
     for (let k = Math.floor((a0 - START) / STEP) + 1; START + k * STEP <= a1; k++)
       angles.push(START + k * STEP);
@@ -445,12 +457,12 @@ export class StarRope {
       const w = tug * Math.exp(-((a - a0) * R) / (6 * t));
       return [x + ((ex - ox) / pull) * w, y + ((ey - oy) / pull) * w];
     });
-    // Each loop keeps its strands in place: the pattern is fixed to the angle, not the payout.
+    // Cada vuelta mantiene sus hebras en su lugar: el patrón está fijado al ángulo, no a lo que se soltó.
     const alongAt = (a: number) => (a - START) * R + 1e5;
     for (let k = 1; k < loops.length; k++)
       lay(loops[k - 1][0], loops[k - 1][1], loops[k][0], loops[k][1], alongAt(angles[k - 1]));
-    // The end flops out of the pile: it turns gradually away from the middle and runs out past
-    // the loops, so its cut end lies in the open.
+    // La punta cae afuera de la pila: se va alejando de a poco del centro y sale pasando las
+    // vueltas, así su corte queda a la vista.
     let [lx, ly] = loops[loops.length - 1];
     const [qx, qy] = loops[loops.length - 2];
     let dir = Math.atan2(ly - qy, lx - qx);
@@ -466,8 +478,8 @@ export class StarRope {
       [lx, ly] = [nx, ny];
       tail.push([lx, ly]);
     }
-    // The curve from the laid rope to where it leaves the pile, on top of the loops it is
-    // pulled over; its strands slide toward the laid rope as it pays out.
+    // La curva que va de la soga tendida a donde sale de la pila, por encima de las vueltas sobre
+    // las que se arrastra; sus hebras se deslizan hacia la soga tendida a medida que se suelta.
     const [sx0, sy0] = loops[0];
     const [dx, dy] = [loops[1][0] - sx0, loops[1][1] - sy0];
     const dl = Math.hypot(dx, dy) || 1;
@@ -493,11 +505,11 @@ export class StarRope {
     const pile = [...bridge, ...loops, ...tail];
     reset();
 
-    // The rope's real ends: its start, and its end flopped out of the spare pile.
+    // Las puntas reales de la soga: su inicio, y su final caído afuera de la pila de reserva.
     if (this.tip.complete && this.tip.naturalWidth) {
       const tw = (this.tip.width / PX) * t;
       const th = (this.tip.height / PX) * t;
-      // The start points back along the rope's own slope, so it carries on the rope's line.
+      // El inicio apunta hacia atrás siguiendo la pendiente de la soga, así continúa su línea.
       const [sx, sy, sa] = this.point(0);
       for (const [x, y, a] of [
         [sx, sy, sa + Math.PI],
@@ -506,14 +518,14 @@ export class StarRope {
         if (x < -tw || x > this.w + tw) continue;
         ctx.translate(x, y);
         ctx.rotate(a);
-        if (Math.cos(a) < 0) ctx.scale(1, -1); // pointing left: mirror, so its light stays on top
+        if (Math.cos(a) < 0) ctx.scale(1, -1); // apunta a la izquierda: espejar, así su luz queda arriba
         ctx.drawImage(this.tip, -TIP * t, -th / 2, tw, th);
         reset();
       }
     }
 
-    // Each star: its knot on the rope, its avatar tied beside it, alternating above and below.
-    // New knots pop in: they grow from nothing with a little overshoot.
+    // Cada estrella: su nudo en la soga, su avatar atado al lado, alternando arriba y abajo.
+    // Los nudos nuevos aparecen creciendo desde la nada con un pequeño rebote.
     const r = t * AVATAR;
     const pop = (i: number) => {
       const at = this.born.get(i);
@@ -523,20 +535,20 @@ export class StarRope {
     ctx.strokeStyle = "rgb(35 32 28 / 0.35)";
     ctx.lineWidth = 1;
     ctx.beginPath();
-    const tied: [number, number, number, number][] = []; // knot x, y, angle, star
+    const tied: [number, number, number, number][] = []; // x, y y ángulo del nudo, estrella
     knots.forEach((k, i) => {
-      if (i >= this.tied) return; // the rope hasn't paid out this far yet
+      if (i >= this.tied) return; // la soga todavía no se soltó hasta acá
       const s = k * t;
       if (s < this.scroll - r * 3 || s > this.scroll + this.w + r * 3) return;
-      // On the chord between the rope under its picture's two ends, so both ends lie on the rope
-      // even where it bends.
+      // Sobre la cuerda entre los puntos de la soga bajo las dos puntas de su imagen, así las dos
+      // puntas quedan sobre la soga aunque se curve.
       const img = this.knots[this.kinds[i].id];
       const half = img.naturalWidth ? (img.width / PX / 2) * t : t * 2.5;
       const [x0, y0] = this.point(s - half);
       const [x1, y1] = this.point(s + half);
       const [x, y] = [(x0 + x1) / 2, (y0 + y1) / 2];
       const a = Math.atan2(y1 - y0, x1 - x0);
-      // Alternating sides, each tie a little longer or shorter and leaning a little, by hand.
+      // Lados alternados, cada atadura un poco más larga o más corta y un poco inclinada, como a mano.
       const side = i % 2 ? 1 : -1;
       const off = (t * 1.3 + r + jitter(i, 1) * t * 1.6) * pop(i);
       const lean = a + (jitter(i, 2) - 0.5) * 0.7;
@@ -551,7 +563,7 @@ export class StarRope {
     for (const [x, y, a, i] of tied) {
       const img = this.knots[this.kinds[i].id];
       if (!img.complete || !img.naturalWidth) continue;
-      // Cinches: it shows up loose and long along the rope, then pulls tight.
+      // Se ajusta: aparece floja y larga a lo largo de la soga, y después se aprieta.
       const at = this.born.get(i);
       const u = at === undefined ? 1 : Math.min((now - at) / POP, 1);
       const loose = (1 - u) ** 3;
@@ -563,7 +575,7 @@ export class StarRope {
       reset();
     }
 
-    // Avatars, the searched-for star last so it sits on top of its neighbours.
+    // Avatares, la estrella buscada al final para que quede encima de sus vecinas.
     this.spots.sort((a, b) => Number(a.i === this.found) - Number(b.i === this.found));
     const grow = 1 - (1 - this.hoverGrow) ** 3;
     for (const { i, x, y } of this.spots) {
@@ -585,7 +597,7 @@ export class StarRope {
       ctx.lineWidth = found || hover ? 2.5 : 2;
       ctx.stroke();
       if (found) {
-        // Rings pulse out from the found avatar for a moment.
+        // Por un momento salen anillos del avatar encontrado.
         const age = now - this.foundAt;
         for (let k = 0; k < 3; k++) {
           const u = (age - k * 260) / 900;
@@ -596,9 +608,9 @@ export class StarRope {
           ctx.stroke();
         }
         ctx.globalAlpha = 1;
-        // A tag with the knot's number above the avatar.
+        // Una etiqueta con el número del nudo arriba del avatar.
         const label = `#${i + 1}`;
-        ctx.font = "800 14px ui-sans-serif, system-ui, sans-serif";
+        ctx.font = `800 14px ${FONT}`;
         const w = ctx.measureText(label).width + 18;
         const ty = y - rr - 32;
         ctx.fillStyle = ACCENT;
@@ -612,7 +624,8 @@ export class StarRope {
       }
     }
 
-    // An empty, dashed spot for the next star, tied where its knot will go, once every star is shown.
+    // Un lugar vacío y punteado para la próxima estrella, atado donde va a ir su nudo, una vez que
+    // se muestran todas las estrellas.
     this.slot = null;
     if (this.tied === this.stars.length) {
       const i = this.shown;
@@ -635,18 +648,18 @@ export class StarRope {
       ctx.stroke();
       ctx.setLineDash([]);
       ctx.fillStyle = ACCENT;
-      ctx.font = `700 ${Math.round(r)}px ui-sans-serif, system-ui, sans-serif`;
+      ctx.font = `700 ${Math.round(r)}px ${FONT}`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText("★", sx, sy + 1);
     }
 
-    // A note on the spare rope, above the pile, the rope coming into it and the empty spot.
+    // Una nota sobre la soga de reserva, arriba de la pila, de la soga que entra a ella y del lugar vacío.
     const top = Math.min(...pile.map(([, y]) => y), this.slot ? this.slot.y - r : Infinity);
     ctx.fillStyle = ACCENT;
-    ctx.font = "700 12px ui-sans-serif, system-ui, sans-serif";
+    ctx.font = `700 12px ${FONT}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "bottom";
-    ctx.fillText("your knot goes here", px, top - t * 1.5); // moves with the pile
+    ctx.fillText("tu nudo va acá", px, top - t * 1.5); // se mueve con la pila
   }
 }

@@ -6,12 +6,13 @@ import { SLIDERS, physicsFromParams, writePhysics } from "./physicsParams";
 import styles from "./tuner.module.css";
 
 /**
- * The material playground, shown with `?tune` in the URL: a slider per rope constant. Letting go
- * of a slider writes the values to the URL, which re-bakes the knot and keeps them for a share.
+ * El laboratorio de materiales, que aparece con `?tune` en la URL: un slider por cada constante de
+ * la soga. Al soltar un slider se escriben los valores en la URL, lo que vuelve a bakear el nudo y
+ * los guarda para compartir.
  */
 export function Tuner() {
   const [params, setParams] = useSearchParams();
-  // Prerendered pages have no query string, so the panel only exists in the browser.
+  // Las páginas prerenderizadas no tienen query string, así que el panel solo existe en el navegador.
   if (!useIsClient() || !params.has("tune")) return null;
   return <TunerPanel initial={physicsFromParams(params)} onApply={apply} />;
 
@@ -36,8 +37,8 @@ function TunerPanel({
 }) {
   const [physics, setPhysics] = useState(initial);
   return (
-    <section className={styles.tuner} aria-label="Rope material">
-      <h2>Rope material</h2>
+    <section className={styles.tuner} aria-label="Material de la soga">
+      <h2>Material de la soga</h2>
       {SLIDERS.map(({ key, label, min, max, step }) => (
         <label key={key} data-changed={physics[key] !== DEFAULT_PHYSICS[key]}>
           <span>{label}</span>
@@ -61,7 +62,7 @@ function TunerPanel({
           onApply(DEFAULT_PHYSICS);
         }}
       >
-        Reset to defaults
+        Restablecer valores
       </button>
     </section>
   );

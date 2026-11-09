@@ -4,13 +4,17 @@ import { useMountEffect } from "../../shared/hooks";
 import { ResetViewIcon } from "../../shared/ui/icons";
 import styles from "./viewer.module.css";
 
-/** Starts what the viewer shows; returns a cleanup. Call `onDrawn` once the first frame is on screen. */
+/**
+ * Arranca lo que muestra el visor; devuelve una función de limpieza. Llamá a `onDrawn` cuando el
+ * primer cuadro esté en pantalla.
+ */
 export type StartViewer = (viewer: KnotViewer, onDrawn: () => void) => () => void;
 
 /**
- * The 3D view: a full-screen canvas with the knot's picture over it until the first frame is drawn,
- * so the page is never empty and nothing moves when the scene appears. Remount it to start over.
- * `onViewer` hands out the viewer (and null when it is gone), e.g. for a ResetViewButton elsewhere.
+ * La vista 3D: un canvas a pantalla completa con la imagen del nudo encima hasta que se dibuja el
+ * primer cuadro, así la página nunca está vacía y nada se mueve cuando aparece la escena. Volvé a
+ * montarlo para empezar de nuevo.
+ * `onViewer` entrega el visor (y null cuando ya no está), por ejemplo para un ResetViewButton en otro lado.
  */
 export function ViewerCanvas({
   poster,
@@ -40,7 +44,7 @@ export function ViewerCanvas({
       <canvas
         ref={canvas}
         className={styles.scene}
-        aria-label="3D view of the rope. Drag to turn it, scroll or pinch to zoom."
+        aria-label="Vista 3D de la soga. Arrastrá para girarla; usá la rueda o pellizcá para hacer zoom."
       />
       <img className={styles.poster} src={poster} alt="" data-hidden={drawn} decoding="async" />
     </>
@@ -50,8 +54,9 @@ export function ViewerCanvas({
 const noViewer = () => () => {};
 
 /**
- * Eases the camera back to where it started; dimmed while the view is already there. Rendered
- * before the viewer exists too (disabled), so the page's layout is the same before and after.
+ * Lleva la cámara suavemente de vuelta a donde arrancó; se atenúa mientras la vista ya está ahí.
+ * También se renderiza antes de que exista el visor (deshabilitado), así el layout de la página es
+ * el mismo antes y después.
  */
 export function ResetViewButton({ viewer }: { viewer: KnotViewer | null }) {
   const isDefault = useSyncExternalStore(
@@ -63,8 +68,8 @@ export function ResetViewButton({ viewer }: { viewer: KnotViewer | null }) {
     <button
       type="button"
       className={styles.reset}
-      aria-label="Reset view"
-      title="Reset view"
+      aria-label="Restablecer vista"
+      title="Restablecer vista"
       disabled={isDefault}
       onClick={() => viewer?.resetView()}
     >

@@ -1,7 +1,9 @@
-// Renders a knot as a film, frame by frame, with the real rope: a scripted camera, step captions and
-// a title. Driven by film.mjs, which asks for each frame through window.renderFrame(i). Time here is
-// the film's own clock, not the wall clock, so every frame is drawn exactly as asked.
+// Renderiza un nudo como película, cuadro por cuadro, con la soga real: una cámara guionada,
+// subtítulos de los pasos y un título. Lo maneja film.mjs, que pide cada cuadro con
+// window.renderFrame(i). El tiempo acá es el reloj propio de la película, no el reloj real, así
+// cada cuadro se dibuja exactamente como se pidió.
 import * as THREE from "three";
+import archivo from "../src/app/styles/fonts/archivo-latin-wght-normal.woff2?url";
 import { knots } from "../src/engine/knots";
 import { Timeline } from "../src/engine/playback/timeline";
 import { createRopeMaterial } from "../src/engine/render/ropeMaterial";
@@ -13,13 +15,13 @@ const knot = knots.find((k) => k.id === q.get("knot"))!;
 const W = Number(q.get("w") ?? 1920);
 const H = Number(q.get("h") ?? 1080);
 const FPS = Number(q.get("fps") ?? 30);
-// Three cuts: "full" is the whole tutorial with step captions; "hands" is a fast, captionless run
-// that shows the invisible hands doing the pulling (the rope is simulated, nothing is keyframed);
-// "cinch" is just the last pull, close up, for a short satisfying loop.
+// Tres cortes: "full" es el tutorial completo con subtítulos de los pasos; "hands" es una pasada
+// rápida y sin subtítulos que muestra las manos invisibles haciendo los tirones (la soga está
+// simulada, nada tiene keyframes); "cinch" es solo el último tirón, de cerca, para un loop corto y satisfactorio.
 const CUT = q.get("cut") ?? "full";
-const SPEED = Number(q.get("speed") ?? { full: 1, hands: 1.8, cinch: 1 }[CUT]); // sim s per film s
-const LEAD = { full: 0.8, hands: 0.3, cinch: 0.3 }[CUT]!; // film seconds at the start pose
-const HOLD = Number(q.get("hold") ?? { full: 3.2, hands: 1.8, cinch: 1.8 }[CUT]); // on the finished knot
+const SPEED = Number(q.get("speed") ?? { full: 1, hands: 1.8, cinch: 1 }[CUT]); // s de simulación por s de película
+const LEAD = { full: 0.8, hands: 0.3, cinch: 0.3 }[CUT]!; // segundos de película en la pose inicial
+const HOLD = Number(q.get("hold") ?? { full: 3.2, hands: 1.8, cinch: 1.8 }[CUT]); // sobre el nudo terminado
 
 const canvas = document.getElementById("gl") as HTMLCanvasElement;
 canvas.style.width = `${W}px`;
@@ -39,14 +41,14 @@ const ropes = knot.ropes.map((def, k) => {
 });
 for (const prop of knot.props ?? []) stage.scene.add(createPropMesh(prop));
 
-// The cinch cut starts a moment before the last pull; the others start at the beginning.
+// El corte cinch arranca un momento antes del último tirón; los otros arrancan desde el principio.
 const simStart = CUT === "cinch" ? Math.max(0, knot.steps[knot.steps.length - 2].t - 1) : 0;
 const tieEnd = LEAD + (timeline.duration - simStart) / SPEED;
 const total = tieEnd + HOLD;
 const frames = Math.round(total * FPS);
 
-// Camera keys: [film time, azimuth°, elevation°, distance m]. Slow drift while tying, a push in as
-// it cinches, then a low, closer orbit over the finished knot.
+// Keys de cámara: [tiempo de película, azimut°, elevación°, distancia m]. Deriva lenta mientras se
+// ata, un acercamiento cuando se ajusta y después una órbita más baja y cercana sobre el nudo terminado.
 const keys: [number, number, number, number][] =
   CUT === "cinch"
     ? [
@@ -61,10 +63,10 @@ const keys: [number, number, number, number][] =
         [total, 34, 31, 0.55],
       ];
 const ramp = (x: number) => Math.min(Math.max(x, 0), 1);
-const home = new THREE.Vector3(0.02, 0.02, 0.04); // the cinch cut moves this onto the knot
+const home = new THREE.Vector3(0.02, 0.02, 0.04); // el corte cinch mueve esto hasta el nudo
 const target = home.clone();
 
-/** Where the finished rope is thickest: the knot itself, which the camera settles on at the end. */
+/** Dónde la soga terminada es más gruesa: el nudo mismo, sobre el que se acomoda la cámara al final. */
 function knotCentre() {
   const p = timeline.sample(timeline.duration).positions;
   const n = p.length / 3;
@@ -82,7 +84,10 @@ function knotCentre() {
   return new THREE.Vector3(p[3 * best], 0.02, p[3 * best + 2]);
 }
 
-/** Cardinal-spline value of key column `c` at film time `t`, so the camera never stops at a key. */
+/**
+ * Valor del spline cardinal de la columna de keys `c` en el tiempo de película `t`, así la cámara
+ * nunca se frena en una key.
+ */
 function along(t: number, c: 1 | 2 | 3) {
   let i = 0;
   while (i < keys.length - 2 && t >= keys[i + 1][0]) i++;
@@ -92,7 +97,7 @@ function along(t: number, c: 1 | 2 | 3) {
     const lo = keys[Math.max(j - 1, 0)];
     const hi = keys[Math.min(j + 1, keys.length - 1)];
     const dt = hi[0] - lo[0];
-    // End keys ease in and out; inner keys carry the camera through.
+    // Las keys de los extremos entran y salen suave; las del medio llevan la cámara de largo.
     return j === 0 || j === keys.length - 1 ? 0 : (hi[c] - lo[c]) / dt;
   };
   const h = t1 - t0;
@@ -110,7 +115,7 @@ let centre = home;
 const smooth = (x: number) => x * x * (3 - 2 * x);
 
 function placeCamera(t: number) {
-  // Drift from the table's middle onto the knot while it cinches and through the closing shot.
+  // Deriva desde el medio de la mesa hacia el nudo mientras se ajusta y durante el plano de cierre.
   target.lerpVectors(home, centre, smooth(ramp((t - tieEnd * 0.6) / (total - tieEnd * 0.6))));
   const az = (along(t, 1) * Math.PI) / 180;
   const el = (along(t, 2) * Math.PI) / 180;
@@ -130,12 +135,14 @@ const ctx = out.getContext("2d")!;
 const INK = "#23201c";
 const MUTED = "#6d665c";
 const ACCENT = "#b9522c";
-const FONT = 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
+const FONT = '"Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
+// Archivo, la fuente del sitio, cargada antes del primer cuadro: el canvas no espera a que llegue.
+document.fonts.add(await new FontFace("Archivo", `url(${archivo})`, { weight: "100 900" }).load());
 
 const offsets = knot.ropes.map((_, k) => timeline.counts.slice(0, k).reduce((a, b) => a + b, 0));
 const dot = new THREE.Vector3();
 
-/** A soft glowing dot on every point of rope a guide is holding at `sim`. */
+/** Un punto suave y brillante en cada punto de la soga que una guía sostiene en `sim`. */
 function drawHands(sim: number, positions: Float32Array, u: number) {
   for (const g of knot.guides) {
     const end = g.path[g.path.length - 1].t;
@@ -145,7 +152,7 @@ function drawHands(sim: number, positions: Float32Array, u: number) {
     dot.set(positions[3 * i], positions[3 * i + 1], positions[3 * i + 2]).project(stage.camera);
     const x = ((dot.x + 1) / 2) * W;
     const y = ((1 - dot.y) / 2) * H;
-    // Fades in as the hand closes and out as it lets go.
+    // Aparece cuando la mano se cierra y desaparece cuando suelta.
     const alpha = ramp((sim - g.grab) / 0.2) * ramp((end - sim) / 0.3);
     const r = 28 * u;
     const glow = ctx.createRadialGradient(x, y, 0, x, y, r * 2.2);
@@ -162,7 +169,7 @@ function drawHands(sim: number, positions: Float32Array, u: number) {
 }
 
 function overlay(v: number, sim: number, positions: Float32Array) {
-  // A soft vignette pulls the eye to the middle.
+  // Una viñeta suave lleva la mirada al centro.
   const g = ctx.createRadialGradient(W / 2, H / 2, H * 0.45, W / 2, H / 2, H * 1.0);
   g.addColorStop(0, "rgba(70,50,30,0)");
   g.addColorStop(1, "rgba(70,50,30,0.22)");
@@ -187,14 +194,14 @@ function overlay(v: number, sim: number, positions: Float32Array) {
     ctx.fillStyle = ACCENT;
     ctx.font = `600 ${22 * u}px ${FONT}`;
     ctx.letterSpacing = `${2.2 * u}px`;
-    ctx.fillText(`${knot.name.toUpperCase()} · SIMULATED ROPE`, 72 * u, 96 * u);
+    ctx.fillText(`${knot.name.toUpperCase()} · SOGA SIMULADA`, 72 * u, 96 * u);
     ctx.letterSpacing = "0px";
     ctx.fillStyle = INK;
     ctx.font = `650 ${84 * u}px ${FONT}`;
-    ctx.fillText("No keyframes.", 72 * u, 186 * u);
+    ctx.fillText("Sin keyframes.", 72 * u, 186 * u);
     ctx.fillStyle = MUTED;
     ctx.font = `500 ${34 * u}px ${FONT}`;
-    ctx.fillText("Invisible hands pull. Physics does the rest.", 72 * u, 236 * u);
+    ctx.fillText("Unas manos invisibles tiran. La física hace el resto.", 72 * u, 236 * u);
     ctx.globalAlpha = 1;
     if (done) address();
   } else if (CUT === "cinch") {
@@ -205,18 +212,18 @@ function overlay(v: number, sim: number, positions: Float32Array) {
     ctx.globalAlpha = 1;
     if (done) address();
   } else {
-    // Title, top left.
+    // Título, arriba a la izquierda.
     ctx.globalAlpha = ramp((v - 0.2) / 0.7);
     ctx.fillStyle = ACCENT;
     ctx.font = `600 ${22 * u}px ${FONT}`;
     ctx.letterSpacing = `${2.2 * u}px`;
-    ctx.fillText("KNOTS MADE EASY", 72 * u, 96 * u);
+    ctx.fillText("NUDOS SIN VUELTAS", 72 * u, 96 * u);
     ctx.letterSpacing = "0px";
     ctx.fillStyle = INK;
     ctx.font = `650 ${72 * u}px ${FONT}`;
     ctx.fillText(knot.name, 72 * u, 176 * u);
 
-    // The step being tied, bottom centre; the address replaces it on the finished knot.
+    // El paso que se está atando, abajo al centro; la dirección lo reemplaza sobre el nudo terminado.
     ctx.textAlign = "center";
     const steps = knot.steps;
     let i = 0;
@@ -238,7 +245,7 @@ function overlay(v: number, sim: number, positions: Float32Array) {
 
 while (timeline.ready < timeline.duration) await new Promise((r) => setTimeout(r, 100));
 centre = knotCentre();
-if (CUT === "cinch") home.copy(centre); // close up from the first frame
+if (CUT === "cinch") home.copy(centre); // de cerca desde el primer cuadro
 
 Object.assign(window, {
   film: { frames, fps: FPS, seconds: total },
@@ -254,7 +261,7 @@ Object.assign(window, {
     });
     placeCamera(v);
     stage.renderer.render(stage.scene, stage.camera);
-    ctx.globalAlpha = 1; // a fade left over from the last frame would blend it into this one
+    ctx.globalAlpha = 1; // un fundido que quedó del último cuadro lo mezclaría con este
     ctx.drawImage(canvas, 0, 0, W, H);
     overlay(v, sim, positions);
     return out.toDataURL("image/jpeg", 0.96);

@@ -1,42 +1,50 @@
 import type { Guide, KnotDef, Prop, RopeDef, Vec3 } from "../knots/types";
 
-/** Frames per second of the baked timeline. */
+/** Cuadros por segundo de la línea de tiempo bakeada. */
 export const FPS = 60;
 const SUBSTEPS = 24;
 const H = 1 / (FPS * SUBSTEPS);
 const GRAVITY = 9.81;
-const BLOCK = 8; // particles per broad-phase box in the collision test
-const CONTACT_ROUNDS = 4; // fewer lets a hard pull drag rope through rope inside the knot
-// Rotary inertia of each segment, inflated past the real m·r²/4: the real value makes the
-// stiff bend mode ring faster than the substep can follow, which shows as shaking.
+const BLOCK = 8; // partículas por caja de la broad phase en el test de colisiones
+const CONTACT_ROUNDS = 4; // menos deja que un tirón fuerte haga pasar la soga a través de la soga adentro del nudo
+// Inercia rotacional de cada segmento, inflada por encima del m·r²/4 real: el valor real hace que
+// el modo de flexión rígido vibre más rápido de lo que el subpaso puede seguir, y eso se ve como temblor.
 const SEG_INERTIA = 1e-5; // kg·m²
-// Guides are stiff springs, never hard pins, so a guide that asks for more rope than exists lags instead of stretching it.
+// Las guías son resortes rígidos, nunca pines duros, así una guía que pide más soga de la que hay
+// se atrasa en lugar de estirarla.
 const GUIDE_COMPLIANCE = 2.5e-4;
-const RELEASE = 0.3; // seconds a guide takes to let go
-const GUIDE_MAX_FORCE = 10; // N: enough to lift stiff rope, not to drag it across the table
+const RELEASE = 0.3; // segundos que tarda una guía en soltar
+const GUIDE_MAX_FORCE = 10; // N: suficiente para levantar una soga rígida, no para arrastrarla por la mesa
 
-/** What the rope is made of. The playground (`?tune`) overrides these; knots are tuned on the defaults. */
+/**
+ * De qué está hecha la soga. El laboratorio (`?tune`) los sobrescribe; los nudos se ajustan con los
+ * valores por defecto.
+ */
 export interface RopePhysics {
-  /** kg for a whole rope: heavy for its size, so it drapes and settles like thick cotton rope. */
+  /** kg de una soga entera: pesada para su tamaño, así cae y se acomoda como una soga gruesa de algodón. */
   mass: number;
-  /** Bending stiffness EI, N·m². */
+  /** Rigidez a la flexión EI, N·m². */
   bend: number;
-  /** Twist stiffness GJ, N·m²: above EI, since the twisted strands resist twisting more than bending. */
+  /**
+   * Rigidez a la torsión GJ, N·m²: mayor que EI, porque los cordones retorcidos se resisten más a
+   * torcerse que a doblarse.
+   */
   twist: number;
-  /** One coefficient for sticking and sliding, so contacts never stick-slip and judder. */
+  /** Un solo coeficiente para pegarse y deslizarse, así los contactos nunca se traban y sueltan a los saltos. */
   friction: number;
-  /** Air damping, 1/s. */
+  /** Amortiguación del aire, 1/s. */
   airDamping: number;
   /**
-   * Fraction of each particle's velocity pulled toward its neighbours' every substep: internal
-   * friction that kills wobble along the rope without slowing the rope as a whole.
+   * Fracción de la velocidad de cada partícula que se lleva hacia la de sus vecinas en cada
+   * subpaso: fricción interna que elimina el bamboleo a lo largo de la soga sin frenar la soga entera.
    */
   internalDamping: number;
 }
 
-// Cotton laid rope: soft enough to drape and bend tight, heavy and well damped so it settles
-// instead of springing back. Picked by eye in the playground on 2026-10-31; the knots' guides
-// were authored on stiffer rope (EI 0.03, 1 kg) and may need retuning.
+// Soga colchada de algodón: lo bastante blanda para caer y doblarse apretada, pesada y bien
+// amortiguada para que se acomode en lugar de rebotar. Elegida a ojo en el laboratorio el
+// 2026-10-31; las guías de los nudos se escribieron sobre una soga más rígida (EI 0.03, 1 kg) y
+// puede que haya que reajustarlas.
 export const DEFAULT_PHYSICS: RopePhysics = {
   mass: 2.2,
   bend: 0.01,
@@ -46,14 +54,14 @@ export const DEFAULT_PHYSICS: RopePhysics = {
   internalDamping: 0.2,
 };
 
-/** Particles along the rope. Spacing below the radius leaves no gap for other rope to slip through. */
+/** Partículas a lo largo de la soga. Un espaciado menor que el radio no deja hueco para que otra soga se cuele. */
 export function particleCount(rope: RopeDef): number {
   return Math.ceil(rope.length / (0.8 * rope.radius)) + 1;
 }
 
 /**
- * A hand the recorder moves live: pulls one particle toward `target` like a guide. From
- * `release` on, it lets go over the same moment a guide takes at its last key.
+ * Una mano que el grabador mueve en vivo: tira de una partícula hacia `target` como una guía. Desde
+ * `release` en adelante, suelta durante el mismo momento que tarda una guía en su última key.
  */
 export interface Hand {
   index: number;
@@ -63,7 +71,7 @@ export interface Hand {
   release?: number;
 }
 
-/** Everything that carries over from one frame to the next, to go back to (the recorder's undo). */
+/** Todo lo que pasa de un cuadro al siguiente, para poder volver ahí (el deshacer del grabador). */
 export interface SimState {
   x: number[];
   v: number[];
@@ -77,30 +85,31 @@ interface GuideState {
   def: Guide;
   index: number;
   times: number[];
-  points: Vec3[] | null; // filled in when the guide grabs
-  target: Vec3 | null; // null while inactive
-  handsOff: boolean; // another guide takes this point when this one ends, so keep a firm grip
+  points: Vec3[] | null; // se completa cuando la guía agarra
+  target: Vec3 | null; // null mientras está inactiva
+  handsOff: boolean; // otra guía toma este punto cuando termina esta, así que mantener un agarre firme
 }
 
 interface PropState extends Pick<Prop, "kind" | "a" | "radius"> {
-  u: Vec3; // unit axis
+  u: Vec3; // eje unitario
   len: number;
 }
 
 /**
- * Rope as a Cosserat rod solved with small-step XPBD: particles joined by segments that each
- * carry an orientation, so bending and twist are real torques between segments (position-based
- * Cosserat rods, Kugelstadt & Schömer 2016). Plus self-collision with Coulomb friction and a
- * table with friction. Deterministic.
+ * La soga como una varilla de Cosserat resuelta con XPBD de pasos chicos: partículas unidas por
+ * segmentos que llevan cada uno una orientación, así la flexión y la torsión son torques reales
+ * entre segmentos (varillas de Cosserat basadas en posiciones, Kugelstadt y Schömer 2016). Más
+ * autocolisión con fricción de Coulomb y una mesa con fricción. Determinista.
  *
- * Several ropes share the particle and segment arrays, one after another. A segment j joins
- * particles j and j+1, unless `end[j]` marks j as the last of its rope: a break, which no
- * stretch, bend, length or collision-skip rule crosses. Props are fixed capsules and cylinders.
+ * Varias sogas comparten los arrays de partículas y de segmentos, una después de la otra. Un
+ * segmento j une las partículas j y j+1, salvo que `end[j]` marque a j como la última de su soga:
+ * un corte, que ninguna regla de estiramiento, flexión, largo o salto de colisión cruza. Los props
+ * son cápsulas y cilindros fijos.
  */
 export class RopeSim {
-  /** Particles in all ropes together. */
+  /** Partículas de todas las sogas juntas. */
   readonly n: number;
-  /** Where each rope's particles sit in `x`. */
+  /** Dónde quedan las partículas de cada soga en `x`. */
   readonly ropes: { start: number; count: number }[] = [];
   readonly x: Float64Array;
   time = 0;
@@ -108,27 +117,33 @@ export class RopeSim {
   private readonly prev: Float64Array;
   private readonly v: Float64Array;
   private readonly w: Float64Array;
-  /** Inverse mass the length solve sees: a held particle is anchored by the hand, so it moves less. */
+  /**
+   * Masa inversa que ve el cálculo de largos: una partícula agarrada está anclada por la mano, así
+   * que se mueve menos.
+   */
   private readonly wHeld: Float64Array;
-  // Scratch for the length solve, one entry per link.
+  // Memoria temporal para el cálculo de largos, una entrada por eslabón.
   private readonly dir: Float64Array;
   private readonly rhs: Float64Array;
   private readonly cp: Float64Array;
   private readonly lam: Float64Array;
-  /** Segment orientations as quaternions (x, y, z, w); each segment's local z runs along the rope. */
+  /**
+   * Orientaciones de los segmentos como cuaterniones (x, y, z, w); el z local de cada segmento va a
+   * lo largo de la soga.
+   */
   private readonly q: Float64Array;
   private readonly qPrev: Float64Array;
-  private readonly om: Float64Array; // segment angular velocity, body frame
-  private readonly radii: Float64Array; // per particle
-  private readonly spacings: Float64Array; // per segment
-  private readonly rope: Int32Array; // per particle: which rope
-  private readonly end: Uint8Array; // per particle: 1 if last of its rope
-  private readonly skips: number[]; // per rope
-  private readonly boxes: Float64Array; // per block of BLOCK particles: min xyz (less a margin), max xyz
+  private readonly om: Float64Array; // velocidad angular del segmento, en el marco del cuerpo
+  private readonly radii: Float64Array; // por partícula
+  private readonly spacings: Float64Array; // por segmento
+  private readonly rope: Int32Array; // por partícula: a qué soga pertenece
+  private readonly end: Uint8Array; // por partícula: 1 si es la última de su soga
+  private readonly skips: number[]; // por soga
+  private readonly boxes: Float64Array; // por bloque de BLOCK partículas: xyz mínimo (menos un margen), xyz máximo
   private readonly maxRadius: number;
   private readonly props: PropState[];
   private readonly guides: GuideState[];
-  /** Live hands (the recorder); a knot's bake never has any. */
+  /** Manos en vivo (el grabador); el bakeo de un nudo nunca tiene. */
   readonly hands = new Set<Hand>();
 
   constructor(
@@ -152,7 +167,7 @@ export class RopeSim {
     knot.ropes.forEach((def, k) => {
       const count = counts[k];
       const spacing = def.length / (count - 1);
-      // Particles closer than a diameter along the rope always touch, so they never collide.
+      // Las partículas a menos de un diámetro a lo largo de la soga siempre se tocan, así que nunca colisionan.
       this.skips.push(Math.ceil((2 * def.radius) / spacing));
       this.ropes.push({ start, count });
       const pts = layOut(def, count);
@@ -205,13 +220,13 @@ export class RopeSim {
     }
   }
 
-  /** The moving state, as plain numbers so it can be stored. Hands are the caller's to keep. */
+  /** El estado que se mueve, como números planos para poder guardarlo. Las manos las guarda quien llama. */
   save(): SimState {
     const { x, v, q, om, time, flip } = this;
     return { x: [...x], v: [...v], q: [...q], om: [...om], time, flip };
   }
 
-  /** Goes back to a saved state of a simulation of the same ropes. */
+  /** Vuelve a un estado guardado de una simulación de las mismas sogas. */
   restore(state: SimState): void {
     this.x.set(state.x);
     this.v.set(state.v);
@@ -221,7 +236,7 @@ export class RopeSim {
     this.flip = state.flip;
   }
 
-  /** Advances one frame (1 / FPS seconds). */
+  /** Avanza un cuadro (1 / FPS segundos). */
   step(): void {
     for (let s = 0; s < SUBSTEPS; s++) this.substep();
   }
@@ -253,17 +268,17 @@ export class RopeSim {
     }
 
     this.solveGuides();
-    // Alternate direction every substep: a one-way sweep biases tight bends into pushing rope
-    // along itself, which reels the rope through a knot.
+    // Alternar la dirección en cada subpaso: un barrido en un solo sentido sesga las curvas
+    // cerradas a empujar la soga a lo largo de sí misma, lo que hace correr la soga a través del nudo.
     if (this.flip) for (let j = n - 3; j >= 0; j--) this.solveBendTwist(j);
     else for (let j = 0; j < n - 2; j++) this.solveBendTwist(j);
     if (this.flip) for (let j = n - 2; j >= 0; j--) this.solveStretchShear(j);
     else for (let j = 0; j < n - 1; j++) this.solveStretchShear(j);
     this.flip = !this.flip;
-    // Length and contact take turns: contact inside a tight knot pushes rope apart.
+    // Largo y contacto se turnan: el contacto adentro de un nudo apretado separa la soga.
     for (let round = 0; round < CONTACT_ROUNDS; round++) {
       this.solveLengths();
-      this.solveLengths(); // a second Newton step for links that turned a lot this substep
+      this.solveLengths(); // un segundo paso de Newton para los eslabones que giraron mucho en este subpaso
       this.solveCollisions();
     }
     this.solveGround();
@@ -271,7 +286,7 @@ export class RopeSim {
 
     for (let i = 0; i < n * 3; i++) v[i] = (x[i] - prev[i]) / H;
     for (let j = 0; j < n - 1; j++) {
-      // ω = 2·Im(q̄prev ⊗ q) / h, taking the short way round
+      // ω = 2·Im(q̄prev ⊗ q) / h, tomando el camino más corto
       const r = relative(qPrev, j * 4, q, j * 4);
       const sgn = r[3] < 0 ? -2 / H : 2 / H;
       om[j * 3] = r[0] * sgn;
@@ -279,22 +294,23 @@ export class RopeSim {
       om[j * 3 + 2] = r[2] * sgn;
     }
     for (let p = 1; p < n - 1; p++) {
-      if (this.end[p] || this.end[p - 1]) continue; // a rope's own end has no neighbour on one side
+      if (this.end[p] || this.end[p - 1]) continue; // la punta de una soga no tiene vecina de un lado
       for (let i = p * 3; i < p * 3 + 3; i++)
         v[i] += this.physics.internalDamping * ((v[i - 3] + v[i + 3]) / 2 - v[i]);
     }
   }
 
-  /** Bending and twist between segments j and j+1: drives their relative rotation to zero. */
+  /** Flexión y torsión entre los segmentos j y j+1: lleva su rotación relativa a cero. */
   private solveBendTwist(j: number): void {
     if (this.end[j] || this.end[j + 1]) return;
     const { q } = this;
     const a = j * 4;
     const b = a + 4;
-    const r = relative(q, a, q, b); // Darboux vector Ω = Im(q̄a ⊗ qb) ≈ curvature·ds/2
+    const r = relative(q, a, q, b); // Vector de Darboux Ω = Im(q̄a ⊗ qb) ≈ curvatura·ds/2
     const sgn = r[3] < 0 ? -1 : 1;
-    // Energy EI/2·κ²·ds with Ω = κ·ds/2 gives compliance ds / (4·EI) on Ω. Rotating either
-    // segment by θ moves Ω by θ/2, so each counts as inverse mass 1 / (4·I).
+    // La energía EI/2·κ²·ds con Ω = κ·ds/2 da una compliance de ds / (4·EI) sobre Ω. Girar
+    // cualquiera de los dos segmentos un ángulo θ mueve Ω en θ/2, así que cada uno cuenta como masa
+    // inversa 1 / (4·I).
     const ds = this.spacings[j];
     const wsum = 2 / (4 * SEG_INERTIA);
     const bend = ds / (4 * this.physics.bend) / (H * H);
@@ -309,7 +325,10 @@ export class RopeSim {
     normalize(q, b);
   }
 
-  /** Keeps segment j's orientation pointing along the rope, which carries bending onto the particles. */
+  /**
+   * Mantiene la orientación del segmento j apuntando a lo largo de la soga, lo que traslada la
+   * flexión a las partículas.
+   */
   private solveStretchShear(j: number): void {
     if (this.end[j]) return;
     const { x, w, q } = this;
@@ -317,7 +336,7 @@ export class RopeSim {
     const pb = pa + 3;
     const o = j * 4;
     const [qx, qy, qz, qw] = [q[o], q[o + 1], q[o + 2], q[o + 3]];
-    // d3: the segment's local z in the world
+    // d3: el z local del segmento en el mundo
     const d0 = 2 * (qx * qz + qw * qy);
     const d1 = 2 * (qy * qz - qw * qx);
     const d2 = qw * qw - qx * qx - qy * qy + qz * qz;
@@ -337,7 +356,7 @@ export class RopeSim {
     x[pb] += l0 * kb;
     x[pb + 1] += l1 * kb;
     x[pb + 2] += l2 * kb;
-    // World rotation λ × d3 / I turns d3 toward the rope; q += ½ (0, θ) ⊗ q.
+    // La rotación en el mundo λ × d3 / I gira d3 hacia la soga; q += ½ (0, θ) ⊗ q.
     const t0 = (l1 * d2 - l2 * d1) / SEG_INERTIA / 2;
     const t1 = (l2 * d0 - l0 * d2) / SEG_INERTIA / 2;
     const t2 = (l0 * d1 - l1 * d0) / SEG_INERTIA / 2;
@@ -369,7 +388,7 @@ export class RopeSim {
     this.wHeld.set(this.w);
     for (const g of this.guides) {
       if (!g.target) continue;
-      // Over the last moments the grip softens, like fingers opening, so tension eases out.
+      // En los últimos momentos el agarre se afloja, como dedos que se abren, así la tensión se va suave.
       const left = (g.times[g.times.length - 1] - this.time) / RELEASE;
       const grip = g.handsOff ? 1 : Math.min(1, Math.max(left, 0)) ** 2 + 1e-6;
       this.pull(g.index, g.target, grip, g.def.compliance, g.def.force);
@@ -388,7 +407,10 @@ export class RopeSim {
     }
   }
 
-  /** One guide's pull on particle p toward `target`, with `grip` 1 for a firm hand and near 0 letting go. */
+  /**
+   * El tirón de una guía sobre la partícula p hacia `target`, con `grip` 1 para una mano firme y
+   * cerca de 0 al soltar.
+   */
   private pull(
     p: number,
     target: Vec3,
@@ -403,8 +425,8 @@ export class RopeSim {
     const dx = target[0] - x[i];
     const dy = target[1] - x[i + 1];
     const dz = target[2] - x[i + 2];
-    // A hand pulls with limited force: a target the rope cannot reach makes the guide lag
-    // behind it instead of yanking the whole rope.
+    // Una mano tira con fuerza limitada: un objetivo al que la soga no puede llegar hace que la
+    // guía se atrase en lugar de dar un tirón a toda la soga.
     const reach = force * w[p] * H * H;
     const step = Math.hypot(dx, dy, dz) * k;
     if (step > reach) k *= reach / step;
@@ -415,9 +437,10 @@ export class RopeSim {
   }
 
   /**
-   * Every link's length in one direct solve. The links form a chain, so the system is
-   * tridiagonal and solves in linear time (Thomas algorithm). Unlike link-by-link passes it
-   * cannot fall behind, so even a hard pull leaves the rope its length (after Deul et al. 2018).
+   * El largo de todos los eslabones en un solo cálculo directo. Los eslabones forman una cadena,
+   * así que el sistema es tridiagonal y se resuelve en tiempo lineal (algoritmo de Thomas). A
+   * diferencia de las pasadas eslabón por eslabón, no puede quedarse atrás, así que incluso un
+   * tirón fuerte le deja a la soga su largo (según Deul et al. 2018).
    */
   private solveLengths(): void {
     const { n, x, wHeld: w, dir, rhs, cp, lam, spacings, end } = this;
@@ -431,9 +454,9 @@ export class RopeSim {
       dir[a] = dx / d;
       dir[a + 1] = dy / d;
       dir[a + 2] = dz / d;
-      rhs[i] = end[i] ? 0 : spacings[i] - d; // no link across a break
+      rhs[i] = end[i] ? 0 : spacings[i] - d; // ningún eslabón cruza un corte
     }
-    // Forward sweep. Diagonal w_i + w_i+1; links i and i+1 share particle i+1.
+    // Barrido hacia adelante. Diagonal w_i + w_i+1; los eslabones i e i+1 comparten la partícula i+1.
     let prevC = 0;
     let prevD = 0;
     for (let i = 0; i < m; i++) {
@@ -464,10 +487,12 @@ export class RopeSim {
 
   private solveCollisions(): void {
     const { n, x, prev, w, radii, rope, skips, boxes } = this;
-    // Broad phase: a box round each block of BLOCK particles, grown by a margin that covers
-    // contact distance plus pushes during this pass. Pairs are still visited in the same order,
-    // so results are identical to the plain O(n²) test, just without far-apart blocks.
-    // shortcut: still O(n²) in blocks, fine for a few hundred particles; add a spatial hash for much more.
+    // Broad phase: una caja alrededor de cada bloque de BLOCK partículas, agrandada con un margen
+    // que cubre la distancia de contacto más los empujones durante esta pasada. Los pares se siguen
+    // visitando en el mismo orden, así que los resultados son idénticos al test O(n²) común, solo
+    // que sin los bloques muy separados.
+    // atajo: sigue siendo O(n²) en bloques, alcanza para unos pocos cientos de partículas; agregá
+    // un hash espacial para muchas más.
     const margin = 4 * this.maxRadius;
     for (let k = 0, a = 0; a < n; k += 6, a += BLOCK) {
       boxes.fill(Infinity, k, k + 3);
@@ -517,7 +542,7 @@ export class RopeSim {
         x[ib + 1] -= ny * pen * kb;
         x[ib + 2] -= nz * pen * kb;
 
-        // Friction: cancel relative sliding this substep, up to the Coulomb limit.
+        // Fricción: cancelar el deslizamiento relativo en este subpaso, hasta el límite de Coulomb.
         let rx = x[ia] - prev[ia] - (x[ib] - prev[ib]);
         let ry = x[ia + 1] - prev[ia + 1] - (x[ib + 1] - prev[ib + 1]);
         let rz = x[ia + 2] - prev[ia + 2] - (x[ib + 2] - prev[ib + 2]);
@@ -552,7 +577,7 @@ export class RopeSim {
     }
   }
 
-  /** Pushes rope out of the props and lets friction hold it, as the table does. */
+  /** Empuja la soga hacia afuera de los props y deja que la fricción la sostenga, como hace la mesa. */
   private solveProps(): void {
     const { n, x, prev, radii } = this;
     for (const { kind, a, u, len, radius } of this.props) {
@@ -563,8 +588,8 @@ export class RopeSim {
         const pz = x[i + 2] - a[2];
         const t = px * u[0] + py * u[1] + pz * u[2];
         const s = Math.min(Math.max(t, 0), len);
-        // Closest point of the prop's core: on the axis for a capsule (which then gets the radius
-        // as its gap), the solid itself for a cylinder.
+        // Punto más cercano del núcleo del prop: sobre el eje para una cápsula (que entonces toma
+        // el radio como su separación), el sólido mismo para un cilindro.
         let cx = s * u[0];
         let cy = s * u[1];
         let cz = s * u[2];
@@ -583,7 +608,7 @@ export class RopeSim {
         const oy = py - cy;
         const oz = pz - cz;
         const d = Math.hypot(ox, oy, oz);
-        // shortcut: a particle exactly on the core has no push direction and is left alone.
+        // atajo: una partícula justo sobre el núcleo no tiene dirección de empuje y se deja tranquila.
         if (d >= gap || d === 0) continue;
         const pen = gap - d;
         const nx = ox / d;
@@ -607,19 +632,19 @@ export class RopeSim {
     }
   }
 
-  /** Fraction of tangential slide to cancel, given how hard the contact pushed. */
+  /** Fracción del deslizamiento tangencial a cancelar, según qué tan fuerte empujó el contacto. */
   private frictionFactor(slide: number, push: number): number {
     if (slide === 0) return 0;
     return Math.min(1, (this.physics.friction * push) / slide);
   }
 }
 
-/** Evenly spaced points along the rope's start polyline. */
+/** Puntos con espaciado parejo a lo largo de la polilínea inicial de la soga. */
 function layOut(rope: RopeDef, count: number): Vec3[] {
   const { start } = rope;
   const lens = start.slice(1).map((b, k) => Math.hypot(...b.map((c, i) => c - start[k][i])));
   if (Math.abs(lens.reduce((a, b) => a + b, 0) - rope.length) > 0.01 * rope.length)
-    throw new Error("a rope's start polyline must be as long as the rope");
+    throw new Error("la polilínea inicial de una soga tiene que ser tan larga como la soga");
   const spacing = rope.length / (count - 1);
   let k = 0;
   let s0 = 0;
@@ -631,18 +656,21 @@ function layOut(rope: RopeDef, count: number): Vec3[] {
   });
 }
 
-/** Writes into q[o] the shortest rotation taking local z onto the direction from a to b. */
+/** Escribe en q[o] la rotación más corta que lleva el z local a la dirección de a hacia b. */
 function turnZ(q: Float64Array, o: number, a: Vec3, b: Vec3): void {
   const d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
   const l = Math.hypot(...d);
   const dz = d[2] / l;
-  // z × d, with the half-angle w; straight against z, any turn about x will do.
+  // z × d, con el semiángulo w; justo en contra de z, cualquier giro alrededor de x sirve.
   [q[o], q[o + 1], q[o + 2], q[o + 3]] =
     dz < -1 + 1e-9 ? [1, 0, 0, 0] : [-d[1] / l, d[0] / l, 0, 1 + dz];
   normalize(q, o);
 }
 
-/** Smooth path through keys: starts and ends at rest, and stops dead on repeated points (holds). */
+/**
+ * Camino suave a través de las keys: arranca y termina en reposo, y se frena en seco en los puntos
+ * repetidos (esperas).
+ */
 export function sampleHermite(times: number[], points: Vec3[], t: number): Vec3 {
   const last = times.length - 1;
   let k = 0;
@@ -678,7 +706,7 @@ function same(a: Vec3, b: Vec3): boolean {
   return a[0] === b[0] && a[1] === b[1] && a[2] === b[2];
 }
 
-/** Im and Re of q̄a ⊗ qb, as [x, y, z, w]. */
+/** Im y Re de q̄a ⊗ qb, como [x, y, z, w]. */
 function relative(qa: Float64Array, a: number, qb: Float64Array, b: number): number[] {
   const [ax, ay, az, aw] = [-qa[a], -qa[a + 1], -qa[a + 2], qa[a + 3]];
   const [bx, by, bz, bw] = [qb[b], qb[b + 1], qb[b + 2], qb[b + 3]];
@@ -690,7 +718,7 @@ function relative(qa: Float64Array, a: number, qb: Float64Array, b: number): num
   ];
 }
 
-/** out[o] += s · q[p] ⊗ (0, v): turns q by a body-frame rotation. */
+/** out[o] += s · q[p] ⊗ (0, v): gira q con una rotación en el marco del cuerpo. */
 function addMul(
   out: Float64Array,
   o: number,

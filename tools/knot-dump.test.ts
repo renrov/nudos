@@ -1,8 +1,10 @@
-// Knot authoring tool, not a test: skipped unless KNOT is set. Bakes one knot, writes
-// tools/out/bake.json for tools/baked.html and prints numbers to check a change with one bake:
+// Herramienta para escribir nudos, no un test: se saltea salvo que esté definida KNOT. Bakea un
+// nudo, escribe tools/out/bake.json para tools/baked.html e imprime números para revisar un cambio
+// con un solo bakeo:
 //   KNOT=bowline TIMES=11.9,13.3 ATS=0.272,1 CROSS=13.3 npx vitest run tools/knot-dump.test.ts
-// TIMES (default: step times) × ATS (fractions along the rope; `k:a` for rope k, e.g. 1:0.5) print where those points are; CROSS
-// (default: TIMES) lists where the rope crosses itself.
+// TIMES (por defecto: los tiempos de los pasos) × ATS (fracciones a lo largo de la soga; `k:a` para
+// la soga k, por ejemplo 1:0.5) imprimen dónde están esos puntos; CROSS (por defecto: TIMES) lista
+// dónde la soga se cruza consigo misma.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { test } from "vitest";
 import { bake, frameCount } from "../src/engine/sim/bake";
@@ -16,11 +18,13 @@ test.skipIf(!process.env.KNOT)(
   "dump",
   () => {
     const knot = knots.find((k) => k.id === process.env.KNOT);
-    if (!knot) throw new Error(`no knot "${process.env.KNOT}"; ids: ${knots.map((k) => k.id)}`);
+    if (!knot)
+      throw new Error(`no hay ningún nudo "${process.env.KNOT}"; ids: ${knots.map((k) => k.id)}`);
     const R = knot.ropes[0].radius;
     const counts = knot.ropes.map(particleCount);
     const n = counts.reduce((a, b) => a + b, 0);
-    // Per particle: its rope, its fraction along it, and the rest length of the link to the next one (0 at a rope's end).
+    // Por partícula: su soga, su fracción a lo largo de ella y el largo en reposo del eslabón hasta
+    // la siguiente (0 en la punta de una soga).
     const ropeOf: number[] = [];
     const frac: number[] = [];
     const spacing: number[] = [];
@@ -34,7 +38,7 @@ test.skipIf(!process.env.KNOT)(
     const first = counts.map((_, k) => counts.slice(0, k).reduce((a, b) => a + b, 0));
     const name = (i: number) =>
       `${knot.ropes.length > 1 ? ("br"[ropeOf[i]] ?? ropeOf[i]) : ""}${frac[i].toFixed(2)}`;
-    // Far apart along one rope, or on different ropes.
+    // Muy separadas a lo largo de una soga, o en sogas distintas.
     const apart = (i: number, j: number, gap: number) => ropeOf[i] !== ropeOf[j] || j - i >= gap;
     const total = frameCount(knot);
     const all = new Float32Array(total * n * 3);
@@ -43,7 +47,8 @@ test.skipIf(!process.env.KNOT)(
     const dist = (a: number, b: number) =>
       Math.hypot(all[a] - all[b], all[a + 1] - all[b + 1], all[a + 2] - all[b + 2]);
 
-    // Worst stretch of a link, and closest approach of rope parts far apart along it (under 2R is pass-through).
+    // El peor estiramiento de un eslabón, y el acercamiento máximo entre partes de la soga muy
+    // separadas a lo largo de ella (menos de 2R es atravesarse).
     let stretch = 0;
     let stretchAt = "";
     let closest = Infinity;
@@ -86,7 +91,8 @@ test.skipIf(!process.env.KNOT)(
       (t) => `${t.toFixed(2).padStart(6)} ${ats.map((a) => at(frame(t), a)).join(" ")}`,
     );
 
-    // Crossings: rope parts over each other in top view, by fraction along the rope, merged into runs.
+    // Cruces: partes de la soga una encima de otra en vista de arriba, por fracción a lo largo de
+    // la soga, unidas en tramos.
     const cross = list(process.env.CROSS, times).map((t) => {
       const o = frame(t);
       const found: string[] = [];

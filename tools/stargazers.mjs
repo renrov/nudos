@@ -1,13 +1,16 @@
-// Writes public/stargazers.json from the repo's GitHub stargazers, in the compact feed the stargazer
-// rope reads: {"v":1,"t0":<first star, epoch s>,"s":[[login, user id, seconds since the previous star], …]}.
-// About 30 bytes a star. Knots stay once tied: someone who unstars keeps their knot and number.
-// Run by .github/workflows/stargazers.yml; locally: GITHUB_TOKEN=$(gh auth token) node tools/stargazers.mjs
+// Escribe public/stargazers.json a partir de los stargazers del repo en GitHub, en el feed compacto
+// que lee la soga de estrellas: {"v":1,"t0":<primera estrella, s epoch>,"s":[[login, id de usuario,
+// segundos desde la estrella anterior], …]}.
+// Unos 30 bytes por estrella. Los nudos quedan una vez atados: alguien que saca su estrella
+// conserva su nudo y su número.
+// Lo corre .github/workflows/stargazers.yml; localmente: GITHUB_TOKEN=$(gh auth token) node
+// tools/stargazers.mjs
 import { readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 const FILE = new URL("../public/stargazers.json", import.meta.url);
 
-/** [{login, id, time (ms)}] → the feed, one star per line so a new star is a one-line diff. */
+/** [{login, id, time (ms)}] → el feed, una estrella por línea así una estrella nueva es un diff de una línea. */
 export function encode(stars) {
   const sorted = [...stars].sort((a, b) => a.time - b.time);
   const t0 = Math.floor((sorted[0]?.time ?? 0) / 1000);
@@ -21,14 +24,17 @@ export function encode(stars) {
   return `{"v":1,"t0":${t0},"s":[\n${rows.join(",\n")}\n]}\n`;
 }
 
-/** The feed → [{login, id, time (ms)}]. */
+/** El feed → [{login, id, time (ms)}]. */
 export function decode(feed) {
   if (feed?.v !== 1) return [];
   let t = feed.t0;
   return feed.s.map(([login, id, dt]) => ({ login, id, time: (t += dt) * 1000 }));
 }
 
-/** Everyone already on the rope plus the current stargazers, by user id: the first star's time, the latest login. */
+/**
+ * Todos los que ya están en la soga más los stargazers actuales, por id de usuario: la hora de la
+ * primera estrella, el último login.
+ */
 export function merge(tied, current) {
   const byId = new Map(tied.map((s) => [s.id, s]));
   for (const s of current) {
@@ -38,7 +44,8 @@ export function merge(tied, current) {
   return [...byId.values()];
 }
 
-// shortcut: fetches every page each run (100 stars a call); fetch only the newest pages past ~50k stars.
+// atajo: pide todas las páginas en cada corrida (100 estrellas por llamada); pedir solo las páginas
+// más nuevas pasadas las ~50k estrellas.
 async function stargazers(repo, token) {
   const stars = [];
   for (let page = 1; ; page++) {
@@ -65,8 +72,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   let tied = [];
   try {
     tied = decode(JSON.parse(readFileSync(FILE, "utf8")));
-  } catch {} // no file yet: start a fresh rope
+  } catch {} // todavía no hay archivo: arrancar una soga nueva
   const all = merge(tied, await stargazers(repo, process.env.GITHUB_TOKEN));
   writeFileSync(FILE, encode(all));
-  console.log(`${all.length} knots (${all.length - tied.length} new)`);
+  console.log(`${all.length} nudos (${all.length - tied.length} nuevos)`);
 }

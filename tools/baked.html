@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="en">
+<html lang="es-AR">
   <head>
     <meta charset="utf-8" />
-    <title>Baked top view</title>
+    <title>Vista superior del cálculo</title>
     <style>
       body {
         margin: 0;
@@ -33,13 +33,13 @@
     <canvas id="c"></canvas>
     <div id="bar"><input id="s" type="range" min="0" step="1" /><span id="t"></span></div>
     <script type="module">
-      // Top view of tools/out/bake.json (from knot-dump.test.ts), strands drawn in height order. Run `pnpm baked` and open http://localhost:5178/baked.html; ?zoom for the middle of the table, ?box=x0,x1,z0,z1 for any area.
+      // Vista de arriba de tools/out/bake.json (de knot-dump.test.ts), con los tramos dibujados en orden de altura. Corré `pnpm baked` y abrí http://localhost:5178/baked.html; ?zoom para el medio de la mesa, ?box=x0,x1,z0,z1 para cualquier zona.
       const data = await (await fetch("out/bake.json?" + Date.now())).json();
       const { n, radius: R, frames, steps } = data;
-      const counts = data.counts ?? [n]; // ropes back to back
+      const counts = data.counts ?? [n]; // sogas una detrás de la otra
       const ropeOf = counts.flatMap((c, k) => Array(c).fill(k));
       const q = new URLSearchParams(location.search);
-      // ?box=x0,x1,z0,z1 picks the area shown.
+      // ?box=x0,x1,z0,z1 elige la zona que se muestra.
       const [X0, X1, Z0, Z1] = q.has("box")
         ? q.get("box").split(",").map(Number)
         : q.has("zoom")
@@ -84,7 +84,7 @@
           ctx.stroke();
           ctx.fillText(z.toFixed(2), 2, Y - 2);
         }
-        // Runs of rope at one height band, lowest band first: rope over rope sits at least 2R higher.
+        // Tramos de soga en una franja de altura, la franja más baja primero: soga sobre soga queda por lo menos 2R más arriba.
         const level = (i) => Math.max(0, Math.floor((f[i * 3 + 1] + f[i * 3 + 4]) / 2 / R - 0.5));
         const runs = [];
         for (let i = 0; i < n - 1; i++) {
@@ -116,7 +116,7 @@
         }
         ctx.fillStyle = "#222";
         for (let k = 0, e = -1; k < counts.length; k++) {
-          e += counts[k]; // each rope's working end
+          e += counts[k]; // la punta de cada soga
           ctx.beginPath();
           ctx.arc((f[e * 3] - X0) * SC, (f[e * 3 + 2] - Z0) * SC, w / 2 + 1, 0, 7);
           ctx.fill();

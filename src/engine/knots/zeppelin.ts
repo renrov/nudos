@@ -1,27 +1,29 @@
 import type { KnotDef, Vec3 } from "./types";
 
-// The "6 and 9" Zeppelin bend with two ropes; the camera looks from +z, so +z is the bottom of the screen.
-// Both ends start bent into U-shaped bights round the origin: red (rope 1) comes in from the right on
-// the far side, turns left round a small U (radius RR) and runs back right on the near side; blue
-// (rope 0) comes in from the left on the near side, turns right round a larger U (radius BR) lying
-// over red, and runs back left on the far side. Each end then crosses its own standing part, closing
-// its U into a loop: red's end goes UNDER (the 9), blue's goes OVER (the 6, on top). Both loops run
-// anticlockwise on screen. Blue's tail wraps under the near rims and comes up through the middle;
-// red's tail wraps over the far rims and goes down through the middle, past it. Pull all four ends.
+// El nudo Zeppelin "6 y 9" con dos sogas; la cámara mira desde +z, así que +z es la parte de abajo de la pantalla.
+// Las dos puntas arrancan dobladas en senos en forma de U alrededor del origen: la roja (soga 1)
+// entra desde la derecha por el lado lejano, dobla a la izquierda en una U chica (radio RR) y
+// vuelve hacia la derecha por el lado cercano; la azul (soga 0) entra desde la izquierda por el
+// lado cercano, dobla a la derecha en una U más grande (radio BR) que queda sobre la roja, y vuelve
+// hacia la izquierda por el lado lejano. Después cada punta cruza su propia parte fija y cierra su
+// U en un bucle: la punta roja pasa POR DEBAJO (el 9), la azul pasa POR ENCIMA (el 6, arriba). Los
+// dos bucles giran en sentido antihorario en pantalla. La cola azul se enrosca por debajo de los
+// bordes cercanos y sube por el medio; la cola roja se enrosca por encima de los bordes lejanos y
+// baja por el medio, pasándolo. Tirar de las cuatro puntas.
 const R = 0.012;
-const RR = 0.045; // red U radius
-const BR = 0.052; // blue U radius: round the outside of red's, so it rests on red only where it crosses
-const RED_END = 0.47; // red's tail runs out to x = 0.47 on the near side
-const BLUE_END = -0.54; // blue's tail runs out to x = -0.54 on the far side
+const RR = 0.045; // radio de la U roja
+const BR = 0.052; // radio de la U azul: rodea por afuera a la roja, así solo apoya sobre la roja donde se cruzan
+const RED_END = 0.47; // la cola roja llega hasta x = 0.47 del lado cercano
+const BLUE_END = -0.54; // la cola azul llega hasta x = -0.54 del lado lejano
 
-/** Straight in from `from` along z = side * r, round a U of radius r about the origin, straight out to `to`. */
+/** Derecho desde `from` por z = side * r, alrededor de una U de radio r en torno al origen, derecho hasta `to`. */
 function bight(from: number, r: number, side: 1 | -1, to: number, lifted: boolean): Vec3[] {
-  const dir = Math.sign(-from); // heading of the standing part
+  const dir = Math.sign(-from); // dirección de la parte fija
   const points: Vec3[] = [[from, R, side * r]];
   for (let deg = 90; deg >= -90; deg -= 15) {
     const a = (deg * Math.PI) / 180;
     const z = side * r * Math.sin(a);
-    // Blue's U crosses red's runs (z = ±RR) on top of them.
+    // La U azul cruza los tramos de la roja (z = ±RR) por encima.
     const y = lifted && Math.abs(Math.abs(z) - RR) < 0.025 ? 3.2 * R : R;
     points.push([dir * r * Math.cos(a), y, z]);
   }
@@ -35,37 +37,39 @@ const blueStart = bight(-0.92, BR, 1, BLUE_END, true);
 const redStart = bight(0.83, RR, -1, RED_END, false);
 const BLUE = length(blueStart);
 const RED = length(redStart);
-// Fraction along each rope of a point given by its distance from the standing end.
+// Fracción a lo largo de cada soga de un punto dado por su distancia al extremo fijo.
 const blue = (d: number) => d / BLUE;
 const red = (d: number) => d / RED;
-const B_IN = 0.92; // blue: where the U starts (bottom), and its top
+const B_IN = 0.92; // azul: donde arranca la U (abajo), y su parte de arriba
 const B_TOP = B_IN + Math.PI * BR;
-const R_IN = 0.83; // red: where the U starts (top), and its bottom
+const R_IN = 0.83; // roja: donde arranca la U (arriba), y su parte de abajo
 const R_LOW = R_IN + Math.PI * RR;
 
 export const zeppelin: KnotDef = {
   id: "zeppelin",
-  name: "Zeppelin bend",
-  summary:
-    "Joins two ropes securely. It holds under heavy load and still unties easily afterwards.",
+  slug: "nudo-zeppelin",
+  name: "Nudo Zeppelin",
+  summary: "Une dos sogas de forma segura. Aguanta mucha carga y aun así después se desata fácil.",
   ropes: [
     { length: BLUE, radius: R, color: "#2f5fb3", start: blueStart },
     { length: RED, radius: R, start: redStart },
   ],
   duration: 11.7,
-  // Each move starts while the one before it finishes, so the hands never all stand still.
+  // Cada movimiento arranca mientras termina el anterior, así las manos nunca quedan todas quietas.
   steps: [
-    { t: 0, title: "Bend both ends into U shapes, blue over red" },
-    { t: 0.2, title: "Red end: under its own rope, closing a loop" },
-    { t: 2.0, title: "Blue end: over its own rope, closing a loop on top" },
-    { t: 4.0, title: "Blue tail: under the near side and up through both loops" },
-    { t: 6.4, title: "Red tail: over the far side and down through both loops" },
-    { t: 8.9, title: "Pull the tails, then the standing parts, to set the knot" },
-    { t: 11.1, title: "Done: a Zeppelin bend" },
+    { t: 0, title: "Doblá las dos puntas en forma de U, la azul sobre la roja" },
+    { t: 0.2, title: "Punta roja: por debajo de su propia soga, cerrando un bucle" },
+    { t: 2.0, title: "Punta azul: por encima de su propia soga, cerrando un bucle arriba" },
+    { t: 4.0, title: "Cola azul: por debajo del lado cercano y hacia arriba por los dos bucles" },
+    { t: 6.4, title: "Cola roja: por encima del lado lejano y hacia abajo por los dos bucles" },
+    { t: 8.9, title: "Tirá de las colas y después de las partes fijas para asentar el nudo" },
+    { t: 11.1, title: "Listo: un nudo Zeppelin" },
   ],
   guides: [
-    // Hands hold each U where it lies, so drawing the tails round cannot drag the loops out of place.
-    // The near rims (red's bottom, blue's bottom) lift as blue's tail comes round, so both tails can pass under them.
+    // Las manos sostienen cada U donde está, así llevar las colas en redondo no puede sacar los
+    // bucles de su lugar.
+    // Los bordes cercanos (la parte de abajo de la roja y de la azul) se levantan cuando da la
+    // vuelta la cola azul, así las dos colas pueden pasar por debajo.
     { rope: 1, at: red(R_IN), grab: 0.2, path: [{ t: 8.9 }] },
     {
       rope: 1,
@@ -92,7 +96,7 @@ export const zeppelin: KnotDef = {
       ],
     },
 
-    // Red: lift the standing part beyond the loop so the end can swing under it.
+    // Roja: levantar la parte fija más allá del bucle para que la punta pueda girar por debajo.
     {
       rope: 1,
       at: red(R_IN - 0.45),
@@ -105,14 +109,15 @@ export const zeppelin: KnotDef = {
       grab: 0.2,
       force: 45,
       path: [
-        // The tail swings round the right of the U like a page, low on the table, under the lifted
-        // standing part to the far side.
+        // La cola gira alrededor de la derecha de la U como una página, baja sobre la mesa, por
+        // debajo de la parte fija levantada hacia el lado lejano.
         { t: 1.1, p: [0.43, R, -0.18] },
         { t: 1.7, p: [0.3, R, -0.27] },
         { t: 2.4, p: [0.15, R, -0.33] },
         { t: 6.4 },
 
-        // The tuck: back over both far rims, down through the middle, out under the near rims.
+        // La pasada: de nuevo por encima de los dos bordes lejanos, hacia abajo por el medio,
+        // afuera por debajo de los bordes cercanos.
         { t: 7.0, p: [0.06, 0.04, -0.22] },
         { t: 7.5, p: [0.02, 0.06, -0.1] },
         { t: 7.9, p: [0.02, 0.05, -0.03] },
@@ -121,9 +126,9 @@ export const zeppelin: KnotDef = {
       ],
     },
 
-    // Blue: the hand lifts the tail and swings it round the top of the U like a page, over its own
-    // standing part, and without stopping curves it back under both near rims, up through the
-    // middle and over the far rims.
+    // Azul: la mano levanta la cola y la gira alrededor de la parte de arriba de la U como una
+    // página, por encima de su propia parte fija, y sin parar la curva de vuelta por debajo de los
+    // dos bordes cercanos, hacia arriba por el medio y por encima de los bordes lejanos.
     {
       at: 1,
       grab: 2.0,
@@ -143,7 +148,7 @@ export const zeppelin: KnotDef = {
       ],
     },
 
-    // Pull the tails out to their sides, drawing both loops in, then the standing parts apart.
+    // Tirar de las colas hacia sus costados, cerrando los dos bucles, y después separar las partes fijas.
     {
       at: 0,
       grab: 9.3,

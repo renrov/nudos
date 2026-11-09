@@ -11,7 +11,7 @@
             "patterns": [
               {
                 "group": ["react", "react-dom", "react-router", "**/app/**"],
-                "message": "src/engine is framework-free: it must not import React or anything from src/app."
+                "message": "src/engine no depende de ningún framework: no puede importar React ni nada de src/app."
               }
             ]
           }
@@ -27,7 +27,7 @@
             "patterns": [
               {
                 "group": ["../*", "!../../*"],
-                "message": "Features don't import each other; compose them in a screen or route."
+                "message": "Las features no se importan entre sí; se combinan en una pantalla o una ruta."
               }
             ]
           }

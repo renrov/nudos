@@ -1,46 +1,46 @@
-# Knots Made Easy
+# Nudos sin vueltas
 
-See how knots are tied, step by step, with a physically simulated rope.
+Mirá cómo se atan los nudos, paso a paso, con una soga simulada con física de verdad.
 
 **[knots-made-easy.pages.dev](https://knots-made-easy.pages.dev)**
 
-## Knots
+## Nudos
 
 <table>
   <tr>
-    <td align="center"><a href="https://knots-made-easy.pages.dev/knots/overhand/"><img src="public/og/overhand.jpg" width="260" alt="Overhand knot"><br>Overhand knot</a></td>
-    <td align="center"><a href="https://knots-made-easy.pages.dev/knots/slip-knot/"><img src="public/og/slip-knot.jpg" width="260" alt="Slip knot"><br>Slip knot</a></td>
-    <td align="center"><a href="https://knots-made-easy.pages.dev/knots/figure-eight/"><img src="public/og/figure-eight.jpg" width="260" alt="Figure-eight knot"><br>Figure-eight knot</a></td>
+    <td align="center"><a href="https://knots-made-easy.pages.dev/nudos/nudo-simple/"><img src="public/og/overhand.jpg" width="260" alt="Nudo simple"><br>Nudo simple</a></td>
+    <td align="center"><a href="https://knots-made-easy.pages.dev/nudos/nudo-corredizo/"><img src="public/og/slip-knot.jpg" width="260" alt="Nudo corredizo"><br>Nudo corredizo</a></td>
+    <td align="center"><a href="https://knots-made-easy.pages.dev/nudos/nudo-de-ocho/"><img src="public/og/figure-eight.jpg" width="260" alt="Nudo de ocho"><br>Nudo de ocho</a></td>
   </tr>
   <tr>
-    <td align="center"><a href="https://knots-made-easy.pages.dev/knots/bowline/"><img src="public/og/bowline.jpg" width="260" alt="Bowline"><br>Bowline</a></td>
-    <td align="center"><a href="https://knots-made-easy.pages.dev/knots/clove-hitch/"><img src="public/og/clove-hitch.jpg" width="260" alt="Clove hitch"><br>Clove hitch</a></td>
-    <td align="center"><a href="https://knots-made-easy.pages.dev/knots/zeppelin/"><img src="public/og/zeppelin.jpg" width="260" alt="Zeppelin bend"><br>Zeppelin bend</a></td>
+    <td align="center"><a href="https://knots-made-easy.pages.dev/nudos/as-de-guia/"><img src="public/og/bowline.jpg" width="260" alt="As de guía"><br>As de guía</a></td>
+    <td align="center"><a href="https://knots-made-easy.pages.dev/nudos/ballestrinque/"><img src="public/og/clove-hitch.jpg" width="260" alt="Ballestrinque"><br>Ballestrinque</a></td>
+    <td align="center"><a href="https://knots-made-easy.pages.dev/nudos/nudo-zeppelin/"><img src="public/og/zeppelin.jpg" width="260" alt="Nudo Zeppelin"><br>Nudo Zeppelin</a></td>
   </tr>
   <tr>
-    <td align="center"><a href="https://knots-made-easy.pages.dev/knots/square-knot/"><img src="public/og/square-knot.jpg" width="260" alt="Square knot"><br>Square knot</a></td>
-    <td align="center"><a href="https://knots-made-easy.pages.dev/knots/poachers-knot/"><img src="public/og/poachers-knot.jpg" width="260" alt="Poacher's knot"><br>Poacher's knot</a></td>
-    <td align="center"><a href="https://knots-made-easy.pages.dev/knots/daisy-chain/"><img src="public/og/daisy-chain.jpg" width="260" alt="Daisy chain"><br>Daisy chain</a></td>
+    <td align="center"><a href="https://knots-made-easy.pages.dev/nudos/nudo-llano/"><img src="public/og/square-knot.jpg" width="260" alt="Nudo llano"><br>Nudo llano</a></td>
+    <td align="center"><a href="https://knots-made-easy.pages.dev/nudos/nudo-de-cazador-furtivo/"><img src="public/og/poachers-knot.jpg" width="260" alt="Nudo de cazador furtivo"><br>Nudo de cazador furtivo</a></td>
+    <td align="center"><a href="https://knots-made-easy.pages.dev/nudos/cadeneta/"><img src="public/og/daisy-chain.jpg" width="260" alt="Cadeneta"><br>Cadeneta</a></td>
   </tr>
   <tr>
-    <td align="center">🪢<br><b>More knots are being tied</b><br>Star the repo to see them first</td>
+    <td align="center">🪢<br><b>Se están atando más nudos</b><br>Dale una estrella al repo para verlos primero</td>
   </tr>
 </table>
 
-## The stargazer rope
+## La soga de estrellas
 
-Every GitHub star ties a knot. Star the repo and your face joins the rope.
+Cada estrella en GitHub ata un nudo. Dale una estrella al repo y tu cara se suma a la soga.
 
-[![The stargazer rope](.github/stargazer-rope-d24684ae.svg)](https://knots-made-easy.pages.dev/stargazers/)
+[![La soga de estrellas](.github/stargazer-rope-c4d25249.svg)](https://knots-made-easy.pages.dev/estrellas/)
 
-## Run it
+## Cómo correrlo
 
-Needs Node 22.22+ and pnpm.
+Necesita Node 22.22+ y pnpm.
 
 ```bash
 pnpm install
 pnpm dev
 ```
 
-React, React Router and three.js, no physics library. [AGENTS.md](AGENTS.md) explains how it fits
-together and how to add a knot.
+React, React Router y three.js, sin librería de física. [AGENTS.md](AGENTS.md) explica cómo encaja todo
+y cómo agregar un nudo.

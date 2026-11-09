@@ -4,7 +4,8 @@ import { RopeSim, sampleHermite } from "./rope";
 
 const still: KnotDef = {
   id: "still",
-  name: "Still",
+  slug: "quieta",
+  name: "Quieta",
   summary: "",
   ropes: [
     {
@@ -22,7 +23,7 @@ const still: KnotDef = {
 };
 
 describe("sampleHermite", () => {
-  test("passes through every key and holds still on repeated points", () => {
+  test("pasa por cada key y se queda quieto en los puntos repetidos", () => {
     const times = [0, 1, 2, 3];
     const pts: [number, number, number][] = [
       [0, 0, 0],
@@ -37,14 +38,14 @@ describe("sampleHermite", () => {
 });
 
 describe("RopeSim", () => {
-  test("a rope lying on the table stays put and keeps its length", () => {
+  test("una soga apoyada sobre la mesa se queda quieta y conserva su largo", () => {
     const sim = new RopeSim(still);
     const before = sim.x.slice();
     for (let f = 0; f < 60; f++) sim.step();
     for (let i = 0; i < sim.x.length; i++) expect(sim.x[i]).toBeCloseTo(before[i], 4);
   });
 
-  test("is deterministic", () => {
+  test("es determinista", () => {
     const knot: KnotDef = {
       ...still,
       guides: [{ at: 1, grab: 0, path: [{ t: 0.5, p: [0, 0.2, 0.1] }] }],
@@ -58,9 +59,9 @@ describe("RopeSim", () => {
     expect(a.x).toEqual(b.x);
   });
 
-  test("rope dropped onto itself does not pass through", () => {
-    // Lift the end high over the middle and let go. It may land on top or spring off, but no two
-    // distant parts of the rope may ever overlap on the way.
+  test("una soga que cae sobre sí misma no se atraviesa", () => {
+    // Levantar la punta bien alto sobre el medio y soltarla. Puede caer arriba o rebotar, pero
+    // ninguna parte lejana de la soga puede superponerse con otra en el camino.
     const knot: KnotDef = {
       ...still,
       guides: [
@@ -88,19 +89,20 @@ describe("RopeSim", () => {
           closest = Math.min(closest, d);
         }
     }
-    // Contact keeps centres a diameter (2r) apart; well under that means rope passed through rope.
+    // El contacto mantiene los centros a un diámetro (2r) de distancia; bastante menos que eso
+    // quiere decir que una soga atravesó a otra.
     expect(closest).toBeGreaterThan(1.8 * 0.01);
   });
 });
 
-describe.each(["cylinder", "capsule"] as const)("two ropes and a %s pole", (kind) => {
+describe.each(["cylinder", "capsule"] as const)("dos sogas y un poste %s", (kind) => {
   const r = 0.01;
   const pole: Prop = { kind, a: [0.1, 0.0, 0.12], b: [0.1, 0.15, 0.12], radius: 0.02 };
   const knot: KnotDef = {
     ...still,
     duration: 2.5,
     ropes: [
-      // Lies along x on the table.
+      // Tendida a lo largo de x sobre la mesa.
       {
         length: 0.6,
         radius: r,
@@ -109,7 +111,7 @@ describe.each(["cylinder", "capsule"] as const)("two ropes and a %s pole", (kind
           [0.3, r, 0],
         ],
       },
-      // Starts above the first rope, bent at one end, and drops across it.
+      // Arranca por encima de la primera soga, doblada en una punta, y cae cruzándola.
       {
         length: 0.5,
         radius: r,
@@ -121,7 +123,7 @@ describe.each(["cylinder", "capsule"] as const)("two ropes and a %s pole", (kind
       },
     ],
     props: [pole],
-    // The first rope's end is dragged straight through the pole.
+    // La punta de la primera soga se arrastra derecho a través del poste.
     guides: [
       {
         rope: 0,
@@ -138,7 +140,7 @@ describe.each(["cylinder", "capsule"] as const)("two ropes and a %s pole", (kind
   const [a, b] = sim.ropes;
   let ropeGap = Infinity;
   let poleGap = Infinity;
-  let crossing = Infinity; // how far the dropped rope ends above the first at the crossing
+  let crossing = Infinity; // a qué altura queda la soga que cayó sobre la primera en el cruce
   for (let f = 0; f < 150; f++) {
     sim.step();
     for (let i = a.start; i < a.start + a.count; i++) {
@@ -149,7 +151,7 @@ describe.each(["cylinder", "capsule"] as const)("two ropes and a %s pole", (kind
         );
     }
     for (let i = 0; i < sim.n; i++) {
-      // Distance to the pole's axis, for particles beside it.
+      // Distancia al eje del poste, para las partículas que están al lado.
       const h = sim.x[i * 3 + 1];
       if (h > 0 && h < 0.15)
         poleGap = Math.min(poleGap, Math.hypot(sim.x[i * 3] - 0.1, sim.x[i * 3 + 2] - 0.12));
@@ -159,18 +161,18 @@ describe.each(["cylinder", "capsule"] as const)("two ropes and a %s pole", (kind
     if (Math.abs(sim.x[j * 3] + 0.15) < 0.01 && Math.abs(sim.x[j * 3 + 2]) < 0.02)
       crossing = Math.min(crossing, sim.x[j * 3 + 1]);
 
-  test("the dropped rope rests on the other without passing through", () => {
-    expect(ropeGap).toBeGreaterThan(1.8 * r); // centres stay a diameter apart
-    expect(ropeGap).toBeLessThan(2.4 * r); // and they did touch
-    expect(crossing).toBeGreaterThan(2.5 * r); // still above the first rope at the crossing
+  test("la soga que cae apoya sobre la otra sin atravesarla", () => {
+    expect(ropeGap).toBeGreaterThan(1.8 * r); // los centros quedan a un diámetro de distancia
+    expect(ropeGap).toBeLessThan(2.4 * r); // y sí se tocaron
+    expect(crossing).toBeGreaterThan(2.5 * r); // sigue por encima de la primera soga en el cruce
   });
 
-  test("a rope dragged at the pole is stopped by it", () => {
+  test("una soga arrastrada contra el poste es frenada por él", () => {
     expect(poleGap).toBeGreaterThan(0.99 * (pole.radius + r));
-    expect(poleGap).toBeLessThan(pole.radius + 1.3 * r); // it did press on it
+    expect(poleGap).toBeLessThan(pole.radius + 1.3 * r); // sí se apoyó sobre ella
   });
 
-  test("ropes keep their own length", () => {
+  test("las sogas conservan su propio largo", () => {
     for (const [rope, def] of [
       [a, knot.ropes[0]],
       [b, knot.ropes[1]],

@@ -1,14 +1,15 @@
 import type { KnotDef } from "./types";
 
-// The rope lies along x from -0.6 (standing end) to 0.6 (working end); the camera looks from +z.
-// `at` is the fraction along the rope, so a point starts at x = at * 1.2 - 0.6.
+// La soga está tendida a lo largo de x, de -0.6 (extremo fijo) a 0.6 (punta); la cámara mira desde +z.
+// `at` es la fracción a lo largo de la soga, así un punto arranca en x = at * 1.2 - 0.6.
 const R = 0.012;
 
 export const overhand: KnotDef = {
   id: "overhand",
-  name: "Overhand knot",
+  slug: "nudo-simple",
+  name: "Nudo simple",
   summary:
-    "The simplest knot and the base of many others. Use it as a stopper at the end of a rope.",
+    "El nudo más sencillo y la base de muchos otros. Usalo como tope en la punta de una soga.",
   ropes: [
     {
       length: 1.2,
@@ -21,38 +22,39 @@ export const overhand: KnotDef = {
   ],
   duration: 7.6,
   steps: [
-    { t: 0, title: "Lay the rope out straight" },
-    { t: 0.4, title: "Make a loop: bring the working end over the standing part" },
-    { t: 3, title: "Tuck the end under and up through the loop" },
-    { t: 4.6, title: "Pull both ends to tighten" },
-    { t: 6.6, title: "Done: an overhand knot" },
+    { t: 0, title: "Estirá la soga en línea recta" },
+    { t: 0.4, title: "Hacé un bucle: pasá la punta por encima de la parte fija" },
+    { t: 3, title: "Pasá la punta por abajo y subila por dentro del bucle" },
+    { t: 4.6, title: "Tirá de las dos puntas para ajustar" },
+    { t: 6.6, title: "Listo: un nudo simple" },
   ],
   guides: [
-    // Phase 1: one hand carries the end round and over the rope; the rope behind it falls into a
-    // circle (centre about (0.06, 0)) beside the held point, crossing at its left. The end goes on to
-    // the far side, leaving enough tail for the tuck.
-    // Holds the standing part until the pull has taken over, or the end being drawn out drags it across the table.
+    // Fase 1: una mano lleva la punta en redondo y por encima de la soga; la soga de atrás cae en
+    // un círculo (centro cerca de (0.06, 0)) al lado del punto sostenido, cruzándose a su
+    // izquierda. La punta sigue hasta el lado lejano y deja cola suficiente para la pasada.
+    // Sujeta la parte fija hasta que el tirón toma el control, si no la punta, al salir, la
+    // arrastra por la mesa.
     { at: 0.5, grab: 0.4, path: [{ t: 5.0 }] },
     {
       at: 1,
       grab: 0.4,
-      force: 45, // drags the heavy rope round; lighter, it lags and then whips
+      force: 45, // arrastra la soga pesada en redondo; más liviana, se atrasa y después latiguea
       path: [
-        // Slides round on the table, so the rope behind follows it round instead of cutting across.
+        // Se desliza en redondo sobre la mesa, así la soga de atrás la sigue en lugar de cortar camino.
         { t: 1.0, p: [0.35, R, 0.1] },
         { t: 1.55, p: [0.12, R, 0.14] },
         { t: 2.0, p: [-0.03, R, 0.14] },
         { t: 2.25, p: [-0.09, R, 0.09] },
-        // Lifts only to cross the standing part, head on, and settles on the far side without a rush;
-        // it goes this far to leave enough tail for the tuck.
+        // Se levanta solo para cruzar la parte fija, de frente, y se acomoda del lado lejano sin
+        // apuro; llega hasta acá para dejar cola suficiente para la pasada.
         { t: 2.5, p: [-0.09, 0.045, 0.02] },
         { t: 2.75, p: [-0.09, 0.03, -0.09] },
         { t: 3.0, p: [-0.08, R, -0.2] },
       ],
     },
 
-    // Phase 2: lift the far side of the circle, and pass the end under it, up through the middle
-    // and out over the near side.
+    // Fase 2: levantar el lado lejano del círculo y pasar la punta por debajo, hacia arriba por el
+    // medio y afuera por encima del lado cercano.
     {
       at: 0.6,
       grab: 3.0,
@@ -61,7 +63,7 @@ export const overhand: KnotDef = {
     {
       at: 1,
       grab: 3.0,
-      force: 45, // drags the heavy tail through; lighter, it stalls at the edge
+      force: 45, // arrastra la cola pesada por adentro; más liviana, se traba en el borde
       path: [
         { t: 3.35, p: [0.05, R, -0.13] },
         { t: 3.6, p: [0.06, R, -0.04] },
@@ -72,8 +74,10 @@ export const overhand: KnotDef = {
       ],
     },
 
-    // Phase 3: pull both ends hard, so the knot cinches: thick stiff rope takes a couple of hundred newtons.
-    // Targets sit where both tails come out evenly, so the knot (at x ≈ -0.06, more rope to its left) stays put.
+    // Fase 3: tirar fuerte de las dos puntas, así el nudo se ajusta: una soga gruesa y rígida
+    // necesita un par de cientos de newtons.
+    // Los objetivos están donde las dos colas salen parejas, así el nudo (en x ≈ -0.06, con más
+    // soga a su izquierda) se queda quieto.
     {
       at: 0,
       grab: 4.6,

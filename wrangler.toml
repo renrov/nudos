@@ -1,6 +1,6 @@
-# Cloudflare Pages project. `pnpm deploy:pages` builds and uploads build/client to production (branch main),
-# `pnpm deploy:pages:preview` to a preview URL. The custom domain is
-# attached to the project in the Cloudflare dashboard (and set as SITE_URL in src/app/shared/site.ts).
+# Proyecto de Cloudflare Pages. `pnpm deploy:pages` buildea y sube build/client a producción (rama
+# main), `pnpm deploy:pages:preview` a una URL de preview. El dominio propio se conecta al proyecto
+# en el dashboard de Cloudflare (y se pone como SITE_URL en src/app/shared/site.ts).
 name = "knots-made-easy"
 pages_build_output_dir = "./build/client"
 compatibility_date = "2026-10-01"

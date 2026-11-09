@@ -1,55 +1,60 @@
-// Where each star's knot sits on the rope and which knot it is. No imports, so
-// tools/readme-rope.mjs can run it in Node as it is.
+// Dónde queda el nudo de cada estrella en la soga y qué nudo es. Sin imports, así
+// tools/readme-rope.mjs lo puede correr en Node tal cual.
 
 /**
- * The knots a star can tie, commonest first, with the share of stargazers who tie each. Only
- * knots tied in the middle of a rope: one that ends in a loop or a hitch shows its rope end.
+ * Los nudos que puede atar una estrella, del más común al menos común, con la proporción de
+ * stargazers que ata cada uno. Solo nudos que se atan en el medio de la soga: uno que termina en
+ * una gaza o en un amarre muestra la punta de la soga.
  */
 export const KNOT_KINDS = [
-  { id: "overhand", name: "Overhand knot", odds: 0.75 },
-  { id: "figure-eight", name: "Figure-eight knot", odds: 0.25 },
+  { id: "overhand", slug: "nudo-simple", name: "Nudo simple", odds: 0.75 },
+  { id: "figure-eight", slug: "nudo-de-ocho", name: "Nudo de ocho", odds: 0.25 },
 ] as const;
 export type KnotKind = (typeof KNOT_KINDS)[number];
 
-/** The knot a GitHub user ties: always the same for their user id, the rarer knots for fewer people. */
+/**
+ * El nudo que ata un usuario de GitHub: siempre el mismo para su id de usuario, los nudos más raros
+ * para menos gente.
+ */
 export function knotFor(id: number): KnotKind {
-  let u = (Math.imul(id, 2654435761) >>> 0) / 2 ** 32; // spreads ids evenly over [0, 1)
+  let u = (Math.imul(id, 2654435761) >>> 0) / 2 ** 32; // reparte los ids de forma pareja en [0, 1)
   for (const kind of KNOT_KINDS) if ((u -= kind.odds) < 0) return kind;
   return KNOT_KINDS[0];
 }
 
-// Rope lengths, in rope diameters.
-export const LEAD = 8; // bare rope before the first knot and after the last
-const TIGHT = 5; // knot to knot for stars given moments apart: the knot and its avatars just fit
-const STEP = 3.2; // extra rope each time the wait between two stars doubles, past the usual wait
-const LOOSE = 34; // the most rope one lull gets, however long it was
+// Largos de soga, en diámetros de soga.
+export const LEAD = 8; // soga pelada antes del primer nudo y después del último
+const TIGHT = 5; // de nudo a nudo para estrellas que llegaron con instantes de diferencia: el nudo y sus avatares entran justo
+const STEP = 3.2; // soga extra cada vez que se duplica la espera entre dos estrellas, pasada la espera habitual
+const LOOSE = 34; // lo máximo de soga que recibe una pausa, por larga que haya sido
 
-/** A steady random number in [0, 1) for star `i`, so its knot never moves as stars arrive. */
+/** Un número aleatorio estable en [0, 1) para la estrella `i`, así su nudo nunca se mueve cuando llegan estrellas. */
 export const jitter = (i: number, salt = 0) => {
   const h = Math.sin(i * 12.9898 + salt * 78.233) * 43758.5453;
   return h - Math.floor(h);
 };
 
 /**
- * Rope between two knots for a wait of `wait`, where `usual` is this repo's typical wait between
- * stars: tight for a burst, a fixed step more each time the wait doubles, capped. On a log scale
- * a quiet week reads clearly longer than a quiet hour without becoming a long empty swipe, and
- * measuring against the repo's own pace makes it read the same for a repo with 5 stars a year or
- * 1,000 a day: tight means busier than usual, loose means quieter.
+ * Soga entre dos nudos para una espera de `wait`, donde `usual` es la espera típica de este repo
+ * entre estrellas: apretada para una ráfaga, un paso fijo más cada vez que la espera se duplica,
+ * con tope. En escala logarítmica, una semana tranquila se lee claramente más larga que una hora
+ * tranquila sin volverse un deslizamiento largo y vacío, y medir contra el ritmo propio del repo
+ * hace que se lea igual para un repo con 5 estrellas por año o con 1.000 por día: apretada quiere
+ * decir más movida que lo habitual, suelta quiere decir más tranquila.
  */
 export const gapFor = (wait: number, usual: number) =>
   Math.min(TIGHT + STEP * Math.log2(1 + Math.max(wait, 0) / usual), LOOSE);
 
 /**
- * Where each of the first `shown` knots sits along the rope, in rope diameters from its start,
- * given every star's time in ms (sorted). Spacing comes from the wait since the star before,
- * with a little hand-tied wobble. The usual wait is the median over all stars, so knots don't
- * move while the rope replays.
+ * Dónde queda cada uno de los primeros `shown` nudos a lo largo de la soga, en diámetros de soga
+ * desde su inicio, dada la hora de cada estrella en ms (ordenadas). El espaciado sale de la espera
+ * desde la estrella anterior, con un poco de bamboleo de hecho a mano. La espera habitual es la
+ * mediana de todas las estrellas, así los nudos no se mueven mientras la soga se repite.
  */
 export function ropeLayout(times: readonly number[], shown: number) {
   const waits = times.slice(1).map((t, i) => t - times[i]);
   const sorted = [...waits].sort((a, b) => a - b);
-  const usual = Math.max(sorted[Math.floor(sorted.length / 2)] ?? 0, 60_000); // at least a minute
+  const usual = Math.max(sorted[Math.floor(sorted.length / 2)] ?? 0, 60_000); // por lo menos un minuto
   const knots: number[] = [];
   let s = LEAD;
   for (let i = 0; i < Math.min(shown, times.length); i++) {

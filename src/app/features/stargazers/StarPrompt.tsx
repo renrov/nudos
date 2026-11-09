@@ -5,12 +5,12 @@ import { StarIcon } from "../../shared/ui/icons";
 import { markPromptSeen, promptSeen } from "./prompt";
 import styles from "./stargazers.module.css";
 
-/** How long a visitor looks at a knot before the prompt appears. */
+/** Cuánto tiempo mira un nudo alguien antes de que aparezca el aviso. */
 const DELAY_MS = 10_000;
 
 /**
- * Asks for a star once, ten seconds in, and never to someone who has already seen it or visited the
- * stargazer rope. `repoUrl` is the repository, `to` the rope's page.
+ * Pide una estrella una sola vez, a los diez segundos, y nunca a alguien que ya lo vio o que visitó
+ * la soga de estrellas. `repoUrl` es el repositorio, `to` la página de la soga.
  */
 export function StarPrompt({ repoUrl, to }: { repoUrl: string; to: string }) {
   const [open, setOpen] = useState(false);
@@ -27,9 +27,9 @@ export function StarPrompt({ repoUrl, to }: { repoUrl: string; to: string }) {
   const close = () => setOpen(false);
 
   return (
-    <aside className={styles.prompt} aria-label="Join the stargazer rope">
+    <aside className={styles.prompt} aria-label="Sumate a la soga de estrellas">
       <p>
-        <strong>Enjoying it?</strong> Star the repo and your face joins the rope.
+        <strong>¿Te gusta?</strong> Dale una estrella al repo y tu cara se suma a la soga.
       </p>
       <div>
         <a
@@ -39,11 +39,11 @@ export function StarPrompt({ repoUrl, to }: { repoUrl: string; to: string }) {
           rel="noopener"
           onClick={close}
         >
-          <StarIcon /> Star on GitHub
+          <StarIcon /> Dale estrella en GitHub
         </a>
-        <Link to={to}>See the rope</Link>
+        <Link to={to}>Ver la soga</Link>
         <button type="button" onClick={close}>
-          Not now
+          Ahora no
         </button>
       </div>
     </aside>

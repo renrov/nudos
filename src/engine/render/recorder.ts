@@ -17,19 +17,19 @@ import { createPropMesh, createStage } from "./stage";
 import { NATURAL_ROPE } from "./viewer";
 
 const STORAGE_KEY = "knot-recorder-v2";
-const PICK_PX = 24; // how near the pointer a point of rope must be to put a hand on it
-const DOT_PX = 16; // how near a hand's dot must be to grab the dot
-const RELEASE = 0.3; // seconds a hand takes to let go, as a guide does at its last key
-const HOLD = 0.1; // every move ends with this still moment, so moves join without a jerk
-const LIFT_STEP = 0.005; // metres per W/S press or wheel notch
-const PICK_UP = 3; // a new hand plans to lift its point this many radii, like fingers picking it up
+const PICK_PX = 24; // qué tan cerca del puntero tiene que estar un punto de la soga para ponerle una mano
+const DOT_PX = 16; // qué tan cerca tiene que estar el punto de una mano para agarrarlo
+const RELEASE = 0.3; // segundos que tarda una mano en soltar, como hace una guía en su última key
+const HOLD = 0.1; // cada movimiento termina con este momento quieto, así los movimientos se unen sin tirones
+const LIFT_STEP = 0.005; // metros por cada W/S o muesca de la rueda
+const PICK_UP = 3; // una mano nueva planea levantar su punto esta cantidad de radios, como dedos que lo agarran
 const MAX_HEIGHT = 0.2;
 const UNDO_DEPTH = 200;
 const ACCENT = "#b9522c";
-const STEM = 0.09; // the selected hand's lift handle stands this far above its dot
-const HANDLE_PX = 18; // how near the lift handle's tip a press must be
+const STEM = 0.09; // la manija para levantar de la mano elegida queda a esta altura sobre su punto
+const HANDLE_PX = 18; // qué tan cerca de la punta de la manija tiene que ser un clic
 
-/** How hard a hand pulls: a light hand (the guide default), a firm one, or a cinching pull. */
+/** Qué tan fuerte tira una mano: una mano suave (lo predeterminado de una guía), una firme o un tirón que ajusta. */
 export const GRIPS = {
   light: {},
   firm: { force: 60 },
@@ -38,7 +38,10 @@ export const GRIPS = {
 export type Grip = keyof typeof GRIPS;
 export const DURATIONS = [0.5, 1, 2];
 
-/** A hand on the rope: where it is now (`hand.target`), where the next move takes it, and its moves so far. */
+/**
+ * Una mano sobre la soga: dónde está ahora (`hand.target`), a dónde la lleva el próximo movimiento
+ * y sus movimientos hasta ahora.
+ */
 interface HandState {
   id: number;
   grip: Grip;
@@ -51,7 +54,7 @@ export interface HandView {
   id: number;
   grip: Grip;
   height: number;
-  /** Its dot was moved: the next move takes it there. */
+  /** Se movió su punto: el próximo movimiento la lleva ahí. */
   planned: boolean;
 }
 
@@ -65,26 +68,26 @@ export interface RecorderSnapshot {
   grip: Grip;
   duration: number;
   speed: number;
-  /** "move" while a move plays, "replay" while the whole recording plays back. */
+  /** "move" mientras se reproduce un movimiento, "replay" mientras se reproduce toda la grabación. */
   busy: "move" | "replay" | null;
   canUndo: boolean;
   canRedo: boolean;
-  /** Where the selected hand is going, in metres. */
+  /** A dónde va la mano elegida, en metros. */
   plan: Vec3 | null;
   code: string;
 }
 
-/** The marks drawn for one hand. */
+/** Las marcas que se dibujan para una mano. */
 interface Marks {
   dot: THREE.Mesh;
   ghost: THREE.Mesh;
   arrow: THREE.Mesh;
-  drop: THREE.Line; // from the dot down to the table, to show its height
-  link: THREE.Line; // from where the hand is to where it is going
-  stem: THREE.Mesh; // the lift handle's shaft
+  drop: THREE.Line; // desde el punto hasta la mesa, para mostrar su altura
+  link: THREE.Line; // desde donde está la mano hasta donde va
+  stem: THREE.Mesh; // el palito de la manija para levantar
 }
 
-/** What undo goes back to, and what a reload restores. */
+/** A qué vuelve deshacer, y qué restaura una recarga. */
 interface Saved {
   preset: string;
   sim: SimState;
@@ -96,10 +99,11 @@ interface Saved {
 }
 
 /**
- * The knot playground. Click the rope to put a hand on it; a hand holds its point until you let it
- * go. With time stopped, drag hands' dots to where they should go (W/S for height), as many as you
- * like, then play the move: they all go there together over the move's duration. Every hand is
- * recorded as a guide, and the recording replays as the app bakes it.
+ * El taller de nudos. Hacé clic en la soga para ponerle una mano; una mano sostiene su punto hasta
+ * que la soltás. Con el tiempo frenado, arrastrá los puntos de las manos a donde tienen que ir (W/S
+ * para la altura), todos los que quieras, y después reproducí el movimiento: van todas juntas
+ * durante lo que dure el movimiento. Cada mano se graba como una guía, y la grabación se repite tal
+ * como la bakea la app.
  */
 export class KnotRecorder {
   private readonly stage: ReturnType<typeof createStage>;
@@ -110,7 +114,7 @@ export class KnotRecorder {
   private guides: Recording["guides"] = [];
   private steps: Step[] = [];
   private sim!: RopeSim;
-  private live: RopeSim | null = null; // the edited simulation, set aside while a replay plays
+  private live: RopeSim | null = null; // la simulación editada, guardada aparte mientras se reproduce una repetición
   private hands: HandState[] = [];
   private nextId = 1;
   private selected: number | null = null;
@@ -145,7 +149,7 @@ export class KnotRecorder {
   private move: { start: number; end: number; from: Map<HandState, Vec3> } | null = null;
   private replayEnd = 0;
   private carry = 0;
-  /** A dot dragged across the table at `height`, or the lift handle dragged up and down. */
+  /** Un punto arrastrado por la mesa a `height`, o la manija para levantar arrastrada hacia arriba y hacia abajo. */
   private dragging:
     | { state: HandState; height: number; lift?: undefined }
     | { state: HandState; height: number; lift: { grabY: number; startY: number } }
@@ -162,7 +166,8 @@ export class KnotRecorder {
     this.reset(saved?.preset ?? PRESETS[0].name);
     if (saved && saved.sim.x.length === this.sim.n * 3) this.apply(saved);
     this.publish();
-    // Before the orbit controls, so a press on the rope or a dot is ours, not a turn of the view.
+    // Antes de los controles de órbita, así un clic sobre la soga o un punto es nuestro y no un
+    // giro de la vista.
     canvas.addEventListener("pointerdown", this.onDown, { capture: true });
     canvas.addEventListener("pointermove", this.onMove);
     canvas.addEventListener("pointerup", this.onUp);
@@ -179,7 +184,7 @@ export class KnotRecorder {
 
   getSnapshot = () => this.snapshot;
 
-  /** Starts over from another layout. */
+  /** Vuelve a empezar desde otro layout. */
   setPreset(name: string) {
     if (this.busy) return;
     this.checkpoint();
@@ -211,7 +216,7 @@ export class KnotRecorder {
     this.publish();
   }
 
-  /** Plays the planned move: every hand goes to its dot together, over `seconds`. */
+  /** Reproduce el movimiento planeado: cada mano va a su punto, todas juntas, durante `seconds`. */
   play(seconds = this.duration) {
     if (this.busy) return;
     this.checkpoint();
@@ -220,7 +225,7 @@ export class KnotRecorder {
     for (const s of this.hands) {
       if (same(s.plan, s.hand.target)) continue;
       from.set(s, [...s.hand.target]);
-      // A hand that has been still since its last key holds there until now, then moves.
+      // Una mano que está quieta desde su última key se queda ahí hasta ahora, y después se mueve.
       const last = s.track.keys.at(-1)?.t ?? s.track.grab;
       if (last < start - 1e-6) s.track.keys.push({ t: start, p: [...s.hand.target] });
     }
@@ -229,13 +234,13 @@ export class KnotRecorder {
     this.publish();
   }
 
-  /** Lets time run with every hand still, for the rope to settle or a hand to finish letting go. */
+  /** Deja correr el tiempo con todas las manos quietas, para que la soga se acomode o una mano termine de soltar. */
   wait() {
     for (const s of this.hands) s.plan = [...s.hand.target];
     this.play(0.5);
   }
 
-  /** Lets go of a hand: it opens over a moment of running time (the next move or wait). */
+  /** Suelta una mano: se abre durante un momento de tiempo corriendo (el próximo movimiento o espera). */
   letGo(id = this.selected) {
     const s = this.hands.find((h) => h.id === id);
     if (!s || this.busy) return;
@@ -247,7 +252,7 @@ export class KnotRecorder {
     this.changed();
   }
 
-  /** Raises (1) or lowers (-1) the selected hand's dot. */
+  /** Sube (1) o baja (-1) el punto de la mano elegida. */
   lift(direction: number) {
     const s = this.hands.find((h) => h.id === this.selected);
     if (!s || this.busy) return;
@@ -270,7 +275,7 @@ export class KnotRecorder {
     this.travel(this.redoStack, this.undoStack);
   }
 
-  /** Puts the selected hand's dot at an exact place (metres; y is the height). */
+  /** Pone el punto de la mano elegida en un lugar exacto (metros; y es la altura). */
   setPlan(axis: 0 | 1 | 2, value: number) {
     const s = this.hands.find((h) => h.id === this.selected);
     if (!s || this.busy || !Number.isFinite(value)) return;
@@ -279,7 +284,7 @@ export class KnotRecorder {
     this.changed();
   }
 
-  /** Goes back (or forward) to the state on top of `from`, keeping the present on `to`. */
+  /** Vuelve atrás (o adelante) al estado que está arriba de `from`, guardando el presente en `to`. */
   private travel(from: Saved[], to: Saved[]) {
     const saved = from.pop();
     if (!saved || this.busy) return;
@@ -289,7 +294,7 @@ export class KnotRecorder {
     this.changed();
   }
 
-  /** Plays everything recorded from the start in a fresh simulation, as the app will bake it. */
+  /** Reproduce todo lo grabado desde el principio en una simulación nueva, tal como la va a bakear la app. */
   replay() {
     if (this.busy) return;
     const knot = knotOf(this.recording());
@@ -300,7 +305,7 @@ export class KnotRecorder {
     this.publish();
   }
 
-  /** Back from a replay to where the editing was. */
+  /** Vuelve de una repetición a donde estaba la edición. */
   stopReplay() {
     if (this.busy !== "replay" || !this.live) return;
     this.sim = this.live;
@@ -333,14 +338,14 @@ export class KnotRecorder {
     this.stage.dispose();
   }
 
-  /** Everything recorded so far; hands still holding are written as letting go now. */
+  /** Todo lo grabado hasta ahora; las manos que siguen agarrando se escriben como si soltaran ahora. */
   private recording(): Recording {
     const release = this.sim.time + RELEASE;
     const open = this.hands.map((s) => toGuide(s.track, Math.max(release, s.track.grab + RELEASE)));
     return { preset: this.preset, guides: [...this.guides, ...open], steps: this.steps };
   }
 
-  /** A fresh start from preset `name`: the rope laid out, no hands. */
+  /** Un arranque nuevo desde el preset `name`: la soga tendida, sin manos. */
   private reset(name: string) {
     this.preset = name;
     this.guides = [];
@@ -425,12 +430,12 @@ export class KnotRecorder {
       this.publish();
   }
 
-  /** One frame of a playing move or replay. */
+  /** Un cuadro de un movimiento o una repetición en curso. */
   private tick() {
     const move = this.move;
     if (this.busy === "move" && move) {
-      // Each hand eases from where it was to its dot, starting and stopping at rest: the curve a
-      // guide follows between two keys that it holds still at.
+      // Cada mano va suave de donde estaba a su punto, arrancando y frenando en reposo: la curva
+      // que sigue una guía entre dos keys en las que se queda quieta.
       const t = this.sim.time + 1 / FPS;
       const u = Math.min(1, Math.max(0, (t - move.start) / (move.end - move.start || 1)));
       const e = u * u * (3 - 2 * u);
@@ -460,9 +465,9 @@ export class KnotRecorder {
       this.buffers[k].normals.set(this.frames[k].normals);
       this.meshes[k].update(this.buffers[k].positions, this.buffers[k].normals);
     });
-    // Every hand: a dot where it is going, a line down to the table under it, and while it has
-    // not got there, a faint dot where it is and a line between. The selected one has a bigger
-    // dot and a lift handle above it.
+    // Cada mano: un punto a donde va, una línea hasta la mesa debajo de él y, mientras no llegó, un
+    // punto tenue donde está y una línea entre los dos. La elegida tiene un punto más grande y una
+    // manija para levantar encima.
     const replaying = this.busy === "replay";
     for (const [id, m] of this.marks)
       if (replaying || !this.hands.some((s) => s.id === id)) {
@@ -545,7 +550,7 @@ export class KnotRecorder {
     e.preventDefault();
   };
 
-  /** On a dot: select it and drag it. On the rope: select the hand there, or put a new hand on it. */
+  /** Sobre un punto: elegirlo y arrastrarlo. Sobre la soga: elegir la mano que está ahí, o ponerle una mano nueva. */
   private onDown = (e: PointerEvent) => {
     if (this.busy || e.button !== 0) return;
     const lifting = this.hands.find((s) => s.id === this.selected && this.onHandle(e, s));
@@ -614,7 +619,7 @@ export class KnotRecorder {
     this.changed();
   };
 
-  /** The wheel raises or lowers a dot while it is dragged. */
+  /** La rueda sube o baja un punto mientras se lo arrastra. */
   private onWheel = (e: WheelEvent) => {
     if (!this.dragging) return;
     e.preventDefault();
@@ -649,12 +654,12 @@ export class KnotRecorder {
     return state;
   }
 
-  /** Whether the pointer is on hand `s`'s lift handle. */
+  /** Si el puntero está sobre la manija para levantar de la mano `s`. */
   private onHandle(e: PointerEvent, s: HandState): boolean {
     return this.screenDistance(e, [s.plan[0], s.plan[1] + STEM, s.plan[2]]) < HANDLE_PX;
   }
 
-  /** Where the pointer's ray meets the upright plane through hand `s`'s dot, facing the camera. */
+  /** Dónde cruza el rayo del puntero el plano vertical que pasa por el punto de la mano `s`, de frente a la cámara. */
   private onStem(e: PointerEvent, s: HandState): THREE.Vector3 | null {
     const cam = this.stage.camera.position;
     const normal = new THREE.Vector3(cam.x - s.plan[0], 0, cam.z - s.plan[2]).normalize();
@@ -665,7 +670,7 @@ export class KnotRecorder {
     return this.ray(e).intersectPlane(plane, new THREE.Vector3());
   }
 
-  /** The hand whose dot is under the pointer. */
+  /** La mano cuyo punto está debajo del puntero. */
   private dotAt(e: PointerEvent): HandState | null {
     let best: HandState | null = null;
     let bestDist = DOT_PX;
@@ -676,7 +681,7 @@ export class KnotRecorder {
     return best;
   }
 
-  /** The particle nearest the pointer on screen, preferring rope on top; -1 if none is near. */
+  /** La partícula más cercana al puntero en pantalla, prefiriendo la soga de arriba; -1 si no hay ninguna cerca. */
   private ropeAt(e: PointerEvent): number {
     let best = -1;
     let bestScore = PICK_PX;
@@ -697,7 +702,7 @@ export class KnotRecorder {
     return Math.hypot(px - e.clientX, py - e.clientY);
   }
 
-  /** Where the pointer's ray meets the level plane at `height`. */
+  /** Dónde cruza el rayo del puntero el plano horizontal a `height`. */
   private onPlane(e: PointerEvent, height: number): THREE.Vector3 | null {
     return this.ray(e).intersectPlane(
       new THREE.Plane(new THREE.Vector3(0, 1, 0), -height),
@@ -779,6 +784,6 @@ function store(saved: Saved) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
   } catch {
-    // Private windows and full storage: the work just isn't kept across reloads.
+    // Ventanas privadas y almacenamiento lleno: el trabajo simplemente no se guarda entre recargas.
   }
 }

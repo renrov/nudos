@@ -1,21 +1,24 @@
 import type { KnotDef } from "./types";
 
-// The rope lies along x from -0.9 (standing end) to 1.1 (working end); the camera looks from +z.
-// On screen, +z is the near side (bottom of the reference photos) and -z is the far side (top).
-// Guides are placed by `tip(m)`: m metres of rope back from the working end (x = 1.1 - m at the start).
-// The knot is tied about 0.9 m from the tip, so the standing part runs off to the left.
-// Layout: first an S (standing part, a U-turn at the right, a run back left on the far side, a bend,
-// the tip heading right). The upper bend then swings over the standing part, which closes a small eye
-// (centre (0.2, -0.06), radius 0.06) at the right, crossing the standing part at x = 0.15.
+// La soga está tendida a lo largo de x, de -0.9 (extremo fijo) a 1.1 (punta); la cámara mira desde +z.
+// En pantalla, +z es el lado cercano (la parte de abajo de las fotos de referencia) y -z es el lado
+// lejano (arriba).
+// Las guías se ubican con `tip(m)`: m metros de soga hacia atrás desde la punta (x = 1.1 - m al principio).
+// El nudo se ata a unos 0.9 m de la punta, así la parte fija sale hacia la izquierda.
+// Layout: primero una S (la parte fija, una vuelta en U a la derecha, un tramo de vuelta hacia la
+// izquierda por el lado lejano, una curva, la punta yendo a la derecha). Después la curva de arriba
+// gira por encima de la parte fija, lo que cierra un ojo chico (centro (0.2, -0.06), radio 0.06) a
+// la derecha, que cruza la parte fija en x = 0.15.
 const R = 0.012;
 const LENGTH = 2;
 const tip = (m: number) => 1 - m / LENGTH;
 
 export const figureEight: KnotDef = {
   id: "figure-eight",
-  name: "Figure-eight knot",
+  slug: "nudo-de-ocho",
+  name: "Nudo de ocho",
   summary:
-    "A bulkier stopper than the overhand, and easier to untie. The extra turn is what makes the figure eight.",
+    "Un tope más grueso que el nudo simple y más fácil de desatar. La vuelta de más es la que dibuja el ocho.",
   ropes: [
     {
       length: LENGTH,
@@ -28,21 +31,22 @@ export const figureEight: KnotDef = {
   ],
   duration: 17.2,
   steps: [
-    { t: 0, title: "Lay the rope out straight" },
-    { t: 0.4, title: "Fold the working end back into an S" },
-    { t: 3.9, title: "Bring the tip over the rope to make a small loop at the right" },
-    { t: 7, title: "Pass the tip under the rope, up to the top beside the loop" },
-    { t: 9.8, title: "Tuck the tip down through the loop" },
-    { t: 13.2, title: "Pull both ends to tighten" },
-    { t: 16.6, title: "Done: a figure-eight knot" },
+    { t: 0, title: "Estirá la soga en línea recta" },
+    { t: 0.4, title: "Doblá la punta hacia atrás formando una S" },
+    { t: 3.9, title: "Pasá la punta por encima de la soga para hacer un bucle chico a la derecha" },
+    { t: 7, title: "Pasá la punta por debajo de la soga y subila al lado del bucle" },
+    { t: 9.8, title: "Meté la punta hacia abajo por dentro del bucle" },
+    { t: 13.2, title: "Tirá de las dos puntas para ajustar" },
+    { t: 16.6, title: "Listo: un nudo de ocho" },
   ],
   guides: [
-    // Anchor and eye pins hold until the pull has taken over, or the standing part gets dragged.
+    // Los pines del ancla y del ojo sostienen hasta que el tirón toma el control, si no la parte
+    // fija se arrastra.
     { at: tip(1.3), grab: 0.4, path: [{ t: 13.6 }] },
 
-    // The eye, from its right side round to the crossing. In the S these are the U-turn and the middle run.
+    // El ojo, desde su lado derecho hasta el cruce. En la S, son la vuelta en U y el tramo del medio.
     {
-      at: tip(0.805), // right side; lifted again at 9.6 to let the tip pass under it
+      at: tip(0.805), // lado derecho; se vuelve a levantar a los 9.6 para que la punta pase por debajo
       grab: 0.4,
       path: [
         { t: 1.4, p: [0.26, 0.03, -0.03] },
@@ -53,7 +57,7 @@ export const figureEight: KnotDef = {
       ],
     },
     {
-      at: tip(0.71), // far side
+      at: tip(0.71), // lado lejano
       grab: 0.6,
       path: [
         { t: 1.7, p: [0.2, 0.04, -0.1] },
@@ -64,7 +68,7 @@ export const figureEight: KnotDef = {
       ],
     },
     {
-      at: tip(0.615), // left side
+      at: tip(0.615), // lado izquierdo
       grab: 0.8,
       path: [
         { t: 2.0, p: [0.1, 0.04, -0.13] },
@@ -75,7 +79,7 @@ export const figureEight: KnotDef = {
       ],
     },
     {
-      at: tip(0.55), // the upper bend of the S, then the crossing: rests on the standing part
+      at: tip(0.55), // la curva de arriba de la S, después el cruce: apoya sobre la parte fija
       grab: 1.0,
       path: [
         { t: 2.3, p: [0.03, 0.04, -0.17] },
@@ -88,14 +92,14 @@ export const figureEight: KnotDef = {
       ],
     },
 
-    // The tail of the S. These pins lay it out; tip(0.46) lets go, and the rest flip the head over together.
+    // La cola de la S. Estos pines la tienden; tip(0.46) suelta, y el resto da vuelta la cabeza todos juntos.
     {
       at: tip(0.46),
       grab: 1.2,
       path: [{ t: 2.5, p: [0.02, 0.04, -0.23] }, { t: 3.5, p: [0.02, R, -0.23] }, { t: 3.9 }],
     },
     {
-      at: tip(0.37), // the head of the S
+      at: tip(0.37), // la cabeza de la S
       grab: 1.4,
       path: [
         { t: 2.7, p: [0.1, 0.04, -0.27] },
@@ -103,11 +107,11 @@ export const figureEight: KnotDef = {
         { t: 4.6, p: [0.1, 0.07, -0.17] },
         { t: 5.2, p: [0.09, 0.08, 0.03] },
         { t: 5.9, p: [0.1, R, 0.17] },
-        { t: 7 }, // holds the top of the J while the end curls round
+        { t: 7 }, // sostiene la parte de arriba de la J mientras la punta se enrosca
       ],
     },
     {
-      at: tip(0.23), // keeps the tail beyond the head from flopping about, then lays the bottom of the J
+      at: tip(0.23), // evita que la cola más allá de la cabeza ande dando vueltas, y después tiende la parte de abajo de la J
       grab: 1.6,
       path: [
         { t: 2.9, p: [0.22, 0.04, -0.29] },
@@ -122,26 +126,27 @@ export const figureEight: KnotDef = {
     },
     {
       at: 1,
-      grab: 1.8, // last, so the rope folds from the eye outward and never swings through a big loop
-      force: 35, // lifting the end and the rope trailing on the table; lighter, it lags and then whips
+      grab: 1.8, // al final, así la soga se pliega desde el ojo hacia afuera y nunca pasa por un bucle grande
+      force: 35, // levanta la punta y la soga que se arrastra por la mesa; más liviana, se atrasa y después latiguea
       path: [
         { t: 2.5, p: [0.6, 0.06, -0.15] },
         { t: 3.3, p: [0.49, 0.04, -0.29] },
-        { t: 3.9, p: [0.48, R, -0.29] }, // tail lies straight from tip(0.23); nearer, its slack bows into a wave
+        { t: 3.9, p: [0.48, R, -0.29] }, // la cola queda derecha desde tip(0.23); más cerca, su sobrante se arquea en una onda
 
-        // The whole head of the S flips over like a page: the head, the middle of the tail and the end
-        // move together, keeping their spacing. Then the end leads left along the near side and turns
-        // up, ahead of the hand laying the bottom of the J, so the tip points at the standing part.
+        // Toda la cabeza de la S se da vuelta como una página: la cabeza, el medio de la cola y la
+        // punta se mueven juntos, manteniendo su separación. Después la punta va adelante hacia la
+        // izquierda por el lado cercano y dobla hacia arriba, delante de la mano que tiende la
+        // parte de abajo de la J, así la punta apunta a la parte fija.
         { t: 4.6, p: [0.46, 0.07, -0.18] },
         { t: 5.2, p: [0.42, 0.07, 0.05] },
         { t: 5.75, p: [0.2, 0.04, 0.3] },
         { t: 6.1, p: [-0.05, R, 0.28] },
         { t: 6.6, p: [-0.08, R, 0.16] },
-        { t: 7, p: [-0.07, R, 0.08] }, // short of the standing part; the tuck's hand takes it from here
+        { t: 7, p: [-0.07, R, 0.08] }, // antes de llegar a la parte fija; desde acá la toma la mano de la pasada
       ],
     },
 
-    // Lift the standing part at x = -0.03 and pass the tip under it, near side to far side.
+    // Levantar la parte fija en x = -0.03 y pasar la punta por debajo, del lado cercano al lado lejano.
     {
       at: tip(1.1),
       grab: 7.4,
@@ -149,14 +154,15 @@ export const figureEight: KnotDef = {
     },
     {
       at: 1,
-      grab: 7, // from the near side, where the flip left it
+      grab: 7, // desde el lado cercano, donde la dejó la vuelta
       force: 50,
       path: [
         { t: 8, p: [-0.1, R, 0.07] },
         { t: 8.4, p: [-0.03, R, 0] },
         { t: 8.8, p: [-0.02, R, -0.13] },
 
-        // Over the far side of the eye, down into it, then under the right side of the eye.
+        // Por encima del lado lejano del ojo, hacia abajo adentro de él, y después por debajo del
+        // lado derecho del ojo.
         { t: 9.8, p: [0.12, 0.07, -0.2] },
         { t: 10.4, p: [0.2, 0.07, -0.19] },
         { t: 10.9, p: [0.21, 0.04, -0.09] },
@@ -166,12 +172,12 @@ export const figureEight: KnotDef = {
       ],
     },
     {
-      at: tip(0.805), // the right side of the eye lifts so the tip can slide under it
+      at: tip(0.805), // el lado derecho del ojo se levanta para que la punta pueda deslizarse por debajo
       grab: 9.6,
       path: [{ t: 10.2, p: [0.26, 0.07, -0.05] }, { t: 12.2 }, { t: 12.6, p: [0.26, R, -0.05] }],
     },
 
-    // Pull both ends hard, so the knot cinches. Targets leave a short tail.
+    // Tirar fuerte de las dos puntas, así el nudo se ajusta. Los objetivos dejan una cola corta.
     {
       at: 0,
       grab: 13.2,
@@ -187,9 +193,9 @@ export const figureEight: KnotDef = {
       path: [{ t: 14.4, p: [0.56, R, 0] }, { t: 15.2 }, { t: 15.8, p: [0.54, R, 0] }, { t: 16 }],
     },
 
-    // Pulled tight, the knot stands up on its edge. While the ends ease off (above), a hand rolls its
-    // top toward the camera round the knot's own middle, so it lies flat and shows the 8 without
-    // sliding off the rope's line.
+    // Cuando se aprieta, el nudo se para de canto. Mientras las puntas aflojan (arriba), una mano
+    // gira su parte de arriba hacia la cámara alrededor del propio centro del nudo, así queda plano
+    // y muestra el 8 sin salirse de la línea de la soga.
     {
       at: 0.646,
       grab: 15.2,

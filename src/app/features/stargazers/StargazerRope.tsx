@@ -8,25 +8,29 @@ import { markPromptSeen } from "./prompt";
 import { type Star, StarRope, countAt } from "./rope";
 import styles from "./stargazers.module.css";
 
-/** How long the replay takes: a beat per star, so a few stars don't crawl, up to six seconds. */
+/** Cuánto dura la repetición: un pulso por estrella, así unas pocas estrellas no se arrastran, hasta seis segundos. */
 const playMs = (stars: number) => Math.min(800 + stars * 150, 6000);
-/** The replay ties only the newest stars, slowly enough to watch; the older ones are already on the rope. */
+/**
+ * La repetición ata solo las estrellas más nuevas, lo bastante lento para verlo; las más viejas ya
+ * están en la soga.
+ */
 const REPLAY = 50;
 const MILESTONES = [10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000];
 const WEEK = 7 * 864e5;
 const avatar = (s: Star, size: number) => `${s.user.avatar_url}&s=${size}`;
-/** "Bowline · 4% of stargazers" */
+/** "As de guía · 4% de las estrellas" */
 const knotLine = (s: Star) => {
   const kind = knotFor(s.user.id);
-  return `${kind.name} · ${Math.round(kind.odds * 100)}% of stargazers`;
+  return `${kind.name} · ${Math.round(kind.odds * 100)}% de las estrellas`;
 };
-const day = (iso: string) => new Date(iso).toLocaleDateString("en", { dateStyle: "medium" });
+const day = (iso: string) => new Date(iso).toLocaleDateString("es-AR", { dateStyle: "medium" });
 const month = (t: number) =>
-  new Date(t).toLocaleDateString("en", { month: "short", year: "numeric" });
+  new Date(t).toLocaleDateString("es-AR", { month: "short", year: "numeric" });
 
 /**
- * Every GitHub star as a knot on one rope, with a timeline that replays how the stars piled up.
- * `src` is the stargazer feed (see `Feed`), refreshed by the stargazers GitHub Action.
+ * Cada estrella de GitHub como un nudo en una misma soga, con una línea de tiempo que repite cómo
+ * se fueron juntando las estrellas.
+ * `src` es el feed de stargazers (ver `Feed`), que actualiza la GitHub Action de stargazers.
  */
 export function StargazerRope({ src, repoUrl }: { src: string; repoUrl: string }) {
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -56,15 +60,15 @@ export function StargazerRope({ src, repoUrl }: { src: string; repoUrl: string }
     setPlaying(false);
   };
   const play = (list = stars) => {
-    // Along the rope at an even speed that eases to a stop, not evenly through the dates: a burst
-    // of stars would tie dozens of knots in one frame and a quiet month would stall.
+    // Avanza por la soga a velocidad pareja que frena suave hasta parar, no de forma pareja por las
+    // fechas: una ráfaga de estrellas ataría docenas de nudos en un cuadro y un mes tranquilo se trabaría.
     const times = list.map((s) => Date.parse(s.starred_at));
     const n = times.length;
-    // Carry on from a paused replay, else start REPLAY stars before the newest.
+    // Seguir desde una repetición en pausa; si no, arrancar REPLAY estrellas antes de la más nueva.
     const mid = time > times[0] && time < times[n - 1];
     const i0 = mid ? Math.max(countAt(list, time) - 1, 0) : Math.max(n - REPLAY, 0);
     const { knots } = ropeLayout(times, n);
-    /** The date at which the replay is `s` diameters along the rope, between its two stars. */
+    /** La fecha en la que la repetición va `s` diámetros sobre la soga, entre sus dos estrellas. */
     const timeAt = (s: number) => {
       let i = i0;
       while (i < n - 1 && knots[i + 1] <= s) i++;
@@ -75,10 +79,10 @@ export function StargazerRope({ src, repoUrl }: { src: string; repoUrl: string }
     const t0 = performance.now();
     setPlaying(true);
     const tick = (now: number) => {
-      // rAF's timestamp can be a little before t0 on the first frame.
+      // El timestamp de rAF puede quedar un poco antes de t0 en el primer cuadro.
       const u = Math.min(Math.max((now - t0) / ms, 0), 1);
-      // Starts brisk (1.6× the average speed) and eases to 0.4× by the newest knot, where the
-      // rope's own spring brings it to rest.
+      // Arranca rápido (1,6× la velocidad media) y frena suave hasta 0,4× en el nudo más nuevo,
+      // donde el propio resorte de la soga la deja quieta.
       const s = knots[i0] + (knots[n - 1] - knots[i0]) * (u + 0.6 * u * (1 - u));
       seek(timeAt(s), list, u < 1 ? s : undefined);
       if (u < 1) raf.current = requestAnimationFrame(tick);
@@ -88,8 +92,8 @@ export function StargazerRope({ src, repoUrl }: { src: string; repoUrl: string }
   };
 
   useMountEffect(() => {
-    markPromptSeen(); // Someone on the rope page needs no nudge toward it.
-    // The rope runs the full width, below the intro panel and above the timeline bar.
+    markPromptSeen(); // Quien ya está en la página de la soga no necesita que lo empujen hacia ella.
+    // La soga ocupa todo el ancho, debajo del panel de intro y arriba de la barra de la línea de tiempo.
     const band = () => ({
       top: intro.current!.getBoundingClientRect().bottom + 8,
       bottom: bar.current!.getBoundingClientRect().top - 8,
@@ -115,7 +119,7 @@ export function StargazerRope({ src, repoUrl }: { src: string; repoUrl: string }
     };
   });
 
-  /** Find a stargazer by username (exact, then the first that starts with it) and go to their knot. */
+  /** Busca a un stargazer por nombre de usuario (exacto, si no el primero que empiece así) y va a su nudo. */
   const search = (e: React.FormEvent) => {
     e.preventDefault();
     const name = query.trim().replace(/^@/, "").toLowerCase();
@@ -125,7 +129,7 @@ export function StargazerRope({ src, repoUrl }: { src: string; repoUrl: string }
     if (index < 0) index = stars.findIndex((s) => login(s).startsWith(name));
     if (index < 0) return setFound("missing");
     stop();
-    seek(last, stars); // every knot tied, so theirs is on the rope
+    seek(last, stars); // todos los nudos atados, así el suyo está en la soga
     rope.current?.find(index);
     setFound({ index });
   };
@@ -135,7 +139,8 @@ export function StargazerRope({ src, repoUrl }: { src: string; repoUrl: string }
     return [e.clientX - box.left, e.clientY - box.top] as const;
   };
 
-  // The cumulative-stars curve behind the scrubber, in a 100×40 box; built once, not every frame.
+  // La curva de estrellas acumuladas detrás del scrubber, en una caja de 100×40; se arma una vez,
+  // no en cada cuadro.
   const curve = useMemo(
     () =>
       stars
@@ -148,11 +153,11 @@ export function StargazerRope({ src, repoUrl }: { src: string; repoUrl: string }
   );
   const playedPct = ((time - first) / (last - first || 1)) * 100;
   const latest = stars.slice(Math.max(count - 5, 0), count).reverse();
-  // The next round number to reach, and how far along from the last one.
+  // El próximo número redondo a alcanzar, y cuánto se avanzó desde el anterior.
   const goal = MILESTONES.find((m) => m > count) ?? count + 1;
   const prev = [...MILESTONES].reverse().find((m) => m <= count) ?? 0;
   const progress = ((count - prev) / (goal - prev)) * 100;
-  // Stars in the week up to the newest one (not the clock, so the page renders the same anywhere).
+  // Estrellas de la semana hasta la más nueva (no según el reloj, así la página se renderiza igual en todos lados).
   const thisWeek = stars.filter((s) => last - Date.parse(s.starred_at) < WEEK).length;
   const hit = found && found !== "missing" ? stars[found.index] : null;
 
@@ -162,7 +167,7 @@ export function StargazerRope({ src, repoUrl }: { src: string; repoUrl: string }
         ref={canvas}
         className={styles.canvas}
         role="img"
-        aria-label={`A rope with ${count} knots, one per GitHub star, in date order`}
+        aria-label={`Una soga con ${count} nudos, uno por cada estrella en GitHub, en orden de fecha`}
         onPointerMove={(e) => {
           const [x, y] = point(e);
           const star = rope.current?.pick(x, y);
@@ -185,20 +190,20 @@ export function StargazerRope({ src, repoUrl }: { src: string; repoUrl: string }
         <div className={styles.tip} style={{ left: hover.x, top: hover.y }}>
           <strong>@{hover.star.user.login}</strong>
           <span>{knotLine(hover.star)}</span>
-          <span>starred {day(hover.star.starred_at)}</span>
+          <span>dio su estrella el {day(hover.star.starred_at)}</span>
         </div>
       )}
 
       <section ref={intro} className={styles.hud}>
-        <p className={styles.eyebrow}>Stargazer rope</p>
+        <p className={styles.eyebrow}>Soga de estrellas</p>
         <h1 className={styles.total}>
-          <strong>{loaded ? count.toLocaleString() : "…"}</strong> {count === 1 ? "knot" : "knots"}{" "}
-          tied
+          <strong>{loaded ? count.toLocaleString() : "…"}</strong>{" "}
+          {count === 1 ? "nudo atado" : "nudos atados"}
         </h1>
         <div
           className={styles.goal}
           role="progressbar"
-          aria-label={`Next milestone: ${goal.toLocaleString()} knots`}
+          aria-label={`Próxima meta: ${goal.toLocaleString()} nudos`}
           aria-valuemin={prev}
           aria-valuemax={goal}
           aria-valuenow={count}
@@ -206,17 +211,19 @@ export function StargazerRope({ src, repoUrl }: { src: string; repoUrl: string }
           <span style={{ width: `${progress}%` }} />
         </div>
         <p className={styles.goalText}>
-          <span>{(goal - count).toLocaleString()} to go</span>
+          <span>
+            {goal - count === 1 ? "Falta" : "Faltan"} {(goal - count).toLocaleString()}
+          </span>
           <span>🏁 {goal.toLocaleString()}</span>
         </p>
 
         {latest.length > 0 && (
-          <div className={styles.faces} aria-label="Latest stargazers">
+          <div className={styles.faces} aria-label="Últimas estrellas">
             {latest.map((s) => (
               <img key={s.user.login} src={avatar(s, 48)} alt={`@${s.user.login}`} />
             ))}
             {thisWeek > 0 && thisWeek < count && (
-              <span className={styles.chip}>+{thisWeek} this week</span>
+              <span className={styles.chip}>+{thisWeek} esta semana</span>
             )}
           </div>
         )}
@@ -229,8 +236,8 @@ export function StargazerRope({ src, repoUrl }: { src: string; repoUrl: string }
               setQuery(e.target.value);
               setFound(null);
             }}
-            placeholder="Find your knot"
-            aria-label="Find your knot by GitHub username"
+            placeholder="Buscá tu nudo"
+            aria-label="Buscá tu nudo por usuario de GitHub"
             autoComplete="off"
             spellCheck={false}
             enterKeyHint="search"
@@ -245,25 +252,25 @@ export function StargazerRope({ src, repoUrl }: { src: string; repoUrl: string }
               <br />
               {day(hit.starred_at)}
             </span>
-            <a className={styles.learn} href={knotPath(knotFor(hit.user.id).id)}>
-              {knotLine(hit)} <b>Learn it →</b>
+            <a className={styles.learn} href={knotPath(knotFor(hit.user.id))}>
+              {knotLine(hit)} <b>Aprendelo →</b>
             </a>
           </div>
         )}
         {found === "missing" && (
           <p className={styles.missing} aria-live="polite">
-            Not on the rope yet. Tie yours ★
+            Todavía no está en la soga. Atá el tuyo ★
           </p>
         )}
       </section>
 
-      <div ref={bar} className={styles.timeline} aria-label="Star timeline">
+      <div ref={bar} className={styles.timeline} aria-label="Línea de tiempo de estrellas">
         <button
           type="button"
           className={styles.play}
           disabled={!stars.length}
           aria-pressed={playing}
-          aria-label={playing ? "Pause" : "Replay the stars"}
+          aria-label={playing ? "Pausar" : "Volver a ver las estrellas"}
           onClick={() => (playing ? stop() : play())}
         >
           {playing ? <PauseIcon /> : <PlayIcon />}
@@ -287,8 +294,8 @@ export function StargazerRope({ src, repoUrl }: { src: string; repoUrl: string }
             max={last}
             value={time}
             disabled={!stars.length}
-            aria-label="Date"
-            aria-valuetext={`${count} stars by ${month(time)}`}
+            aria-label="Fecha"
+            aria-valuetext={`${count} estrellas hasta ${month(time)}`}
             onChange={(e) => {
               stop();
               seek(Number(e.target.value));
@@ -297,10 +304,10 @@ export function StargazerRope({ src, repoUrl }: { src: string; repoUrl: string }
         </div>
         <p className={styles.count}>
           <strong>{count} ★</strong>
-          <span>{stars.length ? month(time) : loaded ? "Be the first" : "…"}</span>
+          <span>{stars.length ? month(time) : loaded ? "Dale la primera estrella" : "…"}</span>
         </p>
         <a className={styles.cta} href={repoUrl} target="_blank" rel="noopener">
-          ★ Tie knot #{(stars.length + 1).toLocaleString()}
+          ★ Atá el nudo #{(stars.length + 1).toLocaleString()}
         </a>
       </div>
     </>

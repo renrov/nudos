@@ -1,17 +1,19 @@
 import type { KnotDef } from "./types";
 
-// The rope lies along x from -0.6 (standing end) to 0.9 (working end); the camera looks from +z.
-// `at` is the fraction along the rope, so a point starts at x = at * 1.5 - 0.6.
-// Tied like the overhand, but the tuck is a bight of the tail, not its tip. The bight needs about
-// 0.45 m of tail; the tail is no longer than the straight line from the crossing to where the end
-// lays it, so the rope is longer than the overhand's and the tail goes down and left, in view.
+// La soga está tendida a lo largo de x, de -0.6 (extremo fijo) a 0.9 (punta); la cámara mira desde +z.
+// `at` es la fracción a lo largo de la soga, así un punto arranca en x = at * 1.5 - 0.6.
+// Se ata como el nudo simple, pero lo que se pasa es un seno de la cola, no su punta. El seno
+// necesita unos 0.45 m de cola; la cola no es más larga que la línea recta desde el cruce hasta
+// donde la tiende la punta, así que la soga es más larga que la del nudo simple y la cola va hacia
+// abajo y a la izquierda, a la vista.
 const R = 0.012;
 
 export const slipKnot: KnotDef = {
   id: "slip-knot",
-  name: "Slip knot",
+  slug: "nudo-corredizo",
+  name: "Nudo corredizo",
   summary:
-    "An overhand knot tied with a bight of the short end. A temporary stopper: one pull on the short end undoes it.",
+    "Un nudo simple hecho con un seno de la punta corta. Un tope provisorio: con un tirón de la punta corta se deshace.",
   ropes: [
     {
       length: 1.5,
@@ -24,16 +26,16 @@ export const slipKnot: KnotDef = {
   ],
   duration: 9.1,
   steps: [
-    { t: 0, title: "Lay the rope out straight" },
-    { t: 0.4, title: "Make a loop: bring the short end over the standing part" },
-    { t: 3.75, title: "Fold a bight in the short end and push it under the loop" },
-    { t: 4.8, title: "Bring the bight up through the loop" },
-    { t: 5.9, title: "Pull the bight and the standing part to tighten" },
-    { t: 8.1, title: "Done: a slip knot. Pull the short end to undo it" },
+    { t: 0, title: "Estirá la soga en línea recta" },
+    { t: 0.4, title: "Hacé un bucle: pasá la punta corta por encima de la parte fija" },
+    { t: 3.75, title: "Doblá un seno en la punta corta y empujalo por debajo del bucle" },
+    { t: 4.8, title: "Subí el seno por dentro del bucle" },
+    { t: 5.9, title: "Tirá del seno y de la parte fija para ajustar" },
+    { t: 8.1, title: "Listo: un nudo corredizo. Tirá de la punta corta para deshacerlo" },
   ],
   guides: [
-    // Phase 1: one hand carries the end round the far side and over the rope towards the camera, then
-    // lays the tail out down and to the left; the loop gives up rope as it goes.
+    // Fase 1: una mano lleva la punta en redondo por el lado lejano y por encima de la soga hacia
+    // la cámara, y después tiende la cola hacia abajo y a la izquierda; el bucle va cediendo soga mientras tanto.
     { at: 0.4, grab: 0.4, path: [{ t: 6.3 }] },
     {
       at: 1,
@@ -52,13 +54,13 @@ export const slipKnot: KnotDef = {
       ],
     },
 
-    // Phase 2: lift the near side of the loop; one hand pinches the tail about halfway along and
-    // pushes it, doubled, under that side, up through the middle and out over the far side. The tip
-    // stays outside.
+    // Fase 2: levantar el lado cercano del bucle; una mano pellizca la cola más o menos por la
+    // mitad y la empuja, doblada, por debajo de ese lado, hacia arriba por el medio y afuera por
+    // encima del lado lejano. La punta queda afuera.
     {
       at: 0.5,
       grab: 4.4,
-      force: 45, // lighter, the bight carries this side along with it
+      force: 45, // más liviana, el seno arrastra este lado con él
       path: [{ t: 4.7, p: [0.13, 0.05, 0.07] }, { t: 5.6 }, { t: 5.9, p: [0.13, 0.03, 0.06] }],
     },
     {
@@ -75,8 +77,8 @@ export const slipKnot: KnotDef = {
       ],
     },
 
-    // Phase 3: pull the standing end and the bight apart. The other hand holds the tail's tip, or
-    // the pull draws it through the loop too and the knot falls apart.
+    // Fase 3: tirar del extremo fijo y del seno hacia lados opuestos. La otra mano sostiene la
+    // punta de la cola, si no el tirón también la pasa por el bucle y el nudo se desarma.
     { at: 1, grab: 5.9, path: [{ t: 7.9 }] },
     {
       at: 0,

@@ -1,4 +1,4 @@
 import styles from "./IconButton.module.css";
 
-/** The round, glassy icon style for the page's corner links and buttons. */
+/** El estilo de ícono redondo y vidrioso para los links y botones de las esquinas de la página. */
 export const iconButtonClass = styles.button;

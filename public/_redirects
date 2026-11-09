@@ -1,0 +1,23 @@
+# Las URLs viejas en inglés llevan a las nuevas en castellano (Cloudflare Pages lee este archivo).
+/knots/overhand/ /nudos/nudo-simple/ 301
+/knots/overhand /nudos/nudo-simple/ 301
+/knots/slip-knot/ /nudos/nudo-corredizo/ 301
+/knots/slip-knot /nudos/nudo-corredizo/ 301
+/knots/figure-eight/ /nudos/nudo-de-ocho/ 301
+/knots/figure-eight /nudos/nudo-de-ocho/ 301
+/knots/bowline/ /nudos/as-de-guia/ 301
+/knots/bowline /nudos/as-de-guia/ 301
+/knots/clove-hitch/ /nudos/ballestrinque/ 301
+/knots/clove-hitch /nudos/ballestrinque/ 301
+/knots/zeppelin/ /nudos/nudo-zeppelin/ 301
+/knots/zeppelin /nudos/nudo-zeppelin/ 301
+/knots/square-knot/ /nudos/nudo-llano/ 301
+/knots/square-knot /nudos/nudo-llano/ 301
+/knots/poachers-knot/ /nudos/nudo-de-cazador-furtivo/ 301
+/knots/poachers-knot /nudos/nudo-de-cazador-furtivo/ 301
+/knots/daisy-chain/ /nudos/cadeneta/ 301
+/knots/daisy-chain /nudos/cadeneta/ 301
+/stargazers/ /estrellas/ 301
+/stargazers /estrellas/ 301
+/recorder /grabador 301
+/recorder/ /grabador 301

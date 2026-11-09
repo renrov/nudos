@@ -9,33 +9,42 @@ const collectErrors = (page: Page) => {
   return errors;
 };
 
-test("a knot page bakes, plays, steps and scrubs", async ({ page }) => {
+test("una página de nudo bakea, reproduce, avanza por pasos y se puede recorrer", async ({
+  page,
+}) => {
   const errors = collectErrors(page);
-  await page.goto("/knots/overhand/");
-  await expect(page.getByRole("heading", { name: "Overhand knot" })).toBeVisible();
+  await page.goto("/nudos/nudo-simple/");
+  await expect(page.getByRole("heading", { name: "Nudo simple" })).toBeVisible();
   await expect(page.locator("[data-baked=true]")).toBeVisible({ timeout: 60_000 });
 
-  // Reduced motion: the knot waits for the play button.
-  const play = page.getByRole("button", { name: "Play" });
+  // Movimiento reducido: el nudo espera al botón de reproducir.
+  const play = page.getByRole("button", { name: "Reproducir" });
   await expect(play).toHaveAttribute("aria-pressed", "false");
   await play.click();
-  await expect(page.getByRole("button", { name: "Pause" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "Pausar" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
 
-  await page.getByRole("button", { name: /^Step 4:/ }).click();
-  await expect(page.getByLabel("Playback")).toContainText("Pull both ends to tighten");
+  await page.getByRole("button", { name: /^Paso 4:/ }).click();
+  await expect(page.getByLabel("Reproducción")).toContainText(
+    "Tirá de las dos puntas para ajustar",
+  );
   expect(errors).toEqual([]);
 });
 
-test.describe("without JavaScript", () => {
+test.describe("sin JavaScript", () => {
   test.use({ javaScriptEnabled: false });
 
-  test("the prerendered page has the whole layout, the poster and share tags", async ({ page }) => {
-    await page.goto("/knots/zeppelin/");
-    await expect(page.getByRole("heading", { name: "Zeppelin bend" })).toBeVisible();
-    await expect(page.getByLabel("Playback")).toContainText("1/7");
-    await expect(page.getByRole("button", { name: /^Step 7:/ })).toBeAttached();
+  test("la página prerenderizada tiene todo el layout, el póster y las etiquetas para compartir", async ({
+    page,
+  }) => {
+    await page.goto("/nudos/nudo-zeppelin/");
+    await expect(page.getByRole("heading", { name: "Nudo Zeppelin" })).toBeVisible();
+    await expect(page.getByLabel("Reproducción")).toContainText("1/7");
+    await expect(page.getByRole("button", { name: /^Paso 7:/ })).toBeAttached();
     await expect(page.locator('img[src="/og/zeppelin.jpg"]').first()).toBeVisible();
-    // At least the first few knots; an exact count would break every time a knot is added.
+    // Por lo menos los primeros nudos; un número exacto se rompería cada vez que se agrega uno.
     await expect.poll(() => page.locator("dialog a").count()).toBeGreaterThan(4);
     await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
       "content",
@@ -43,12 +52,12 @@ test.describe("without JavaScript", () => {
     );
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
       "href",
-      /\/knots\/zeppelin\/$/,
+      /\/nudos\/nudo-zeppelin\/$/,
     );
   });
 });
 
-test("loading does not shift the layout", async ({ page }) => {
+test("la carga no mueve el layout", async ({ page }) => {
   await page.addInitScript(() => {
     (window as unknown as Win).cls = 0;
     new PerformanceObserver((list) => {
@@ -59,31 +68,31 @@ test("loading does not shift the layout", async ({ page }) => {
         if (!e.hadRecentInput) (window as unknown as Win).cls += e.value;
     }).observe({ type: "layout-shift", buffered: true });
   });
-  await page.goto("/knots/bowline/");
+  await page.goto("/nudos/as-de-guia/");
   await expect(page.locator("canvas")).toBeVisible();
   await page.waitForTimeout(1500);
   expect(await page.evaluate(() => (window as unknown as Win).cls)).toBe(0);
 });
 
-test("the picker switches knots without a reload, and history works", async ({ page }) => {
+test("el selector cambia de nudo sin recargar, y el historial funciona", async ({ page }) => {
   const errors = collectErrors(page);
-  await page.goto("/knots/overhand/");
+  await page.goto("/nudos/nudo-simple/");
   await page.evaluate(() => ((window as unknown as Win).marker = 1));
-  await page.getByRole("button", { name: "All knots" }).click();
-  await page.getByRole("link", { name: /Bowline/ }).click();
-  await expect(page).toHaveURL(/\/knots\/bowline\/$/);
-  await expect(page.getByRole("heading", { name: "Bowline" })).toBeVisible();
-  await expect(page).toHaveTitle(/Bowline/);
+  await page.getByRole("button", { name: "Todos los nudos" }).click();
+  await page.getByRole("link", { name: /As de guía/ }).click();
+  await expect(page).toHaveURL(/\/nudos\/as-de-guia\/$/);
+  await expect(page.getByRole("heading", { name: "As de guía" })).toBeVisible();
+  await expect(page).toHaveTitle(/As de guía/);
   expect(await page.evaluate(() => (window as unknown as Win).marker)).toBe(1);
 
   await page.goBack();
-  await expect(page.getByRole("heading", { name: "Overhand knot" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Nudo simple" })).toBeVisible();
   expect(errors).toEqual([]);
 });
 
-test("reset view returns the camera after a drag", async ({ page }) => {
-  await page.goto("/knots/overhand/");
-  const reset = page.getByRole("button", { name: "Reset view" });
+test("restablecer vista devuelve la cámara después de arrastrar", async ({ page }) => {
+  await page.goto("/nudos/nudo-simple/");
+  const reset = page.getByRole("button", { name: "Restablecer vista" });
   await expect(reset).toBeDisabled();
   const box = (await page.locator("canvas").boundingBox())!;
   await page.mouse.move(box.width / 2, box.height / 2);
@@ -95,10 +104,21 @@ test("reset view returns the camera after a drag", async ({ page }) => {
   await expect(reset).toBeDisabled();
 });
 
-test("old ?knot= links redirect and unknown pages are a 404", async ({ page }) => {
+test("los links viejos con ?knot= redirigen y las páginas desconocidas dan 404", async ({
+  page,
+}) => {
   await page.goto("/?knot=zeppelin");
-  await expect(page).toHaveURL(/\/knots\/zeppelin\/$/);
-  const response = await page.goto("/knots/no-such-knot/");
+  await expect(page).toHaveURL(/\/nudos\/nudo-zeppelin\/$/);
+  const response = await page.goto("/nudos/no-existe/");
   expect(response?.status()).toBe(404);
-  await expect(page.getByRole("heading", { name: /isn’t here/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /no está acá/ })).toBeVisible();
+});
+
+test("las URLs viejas en inglés redirigen a las nuevas en castellano", async ({ page }) => {
+  const response = await page.goto("/knots/bowline/");
+  expect(response?.request().redirectedFrom()?.url()).toMatch(/\/knots\/bowline\/$/);
+  await expect(page).toHaveURL(/\/nudos\/as-de-guia\/$/);
+  await expect(page.getByRole("heading", { name: "As de guía" })).toBeVisible();
+  await page.goto("/stargazers/");
+  await expect(page).toHaveURL(/\/estrellas\/$/);
 });

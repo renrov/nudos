@@ -1,9 +1,10 @@
-// Draws the newest stargazers' knots as one SVG for the repo README: the real rope and knot
-// pictures, each avatar tied on, the spare pile and an empty spot for the next star. GitHub shows
-// README images through a proxy that blocks outside links, so every picture is embedded.
-// The stargazers workflow renders it after each new star and commits it next to the feed.
-// Run: node tools/readme-rope.mjs                 public/stargazers.json → .github/stargazer-rope-<hash>.svg
-//      node tools/readme-rope.mjs --mock          mock stars → tools/out/stargazer-rope.svg, to review
+// Dibuja los nudos de los stargazers más nuevos como un solo SVG para el README del repo: las
+// imágenes reales de la soga y de los nudos, cada avatar atado, la pila de reserva y un lugar vacío
+// para la próxima estrella. GitHub muestra las imágenes del README a través de un proxy que bloquea
+// los links externos, así que cada imagen va embebida.
+// El workflow de stargazers lo renderiza después de cada estrella nueva y lo commitea junto al feed.
+// Correr: node tools/readme-rope.mjs                 public/stargazers.json → .github/stargazer-rope-<hash>.svg
+//      node tools/readme-rope.mjs --mock          estrellas de prueba → tools/out/stargazer-rope.svg, para revisar
 import { createHash } from "node:crypto";
 import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
@@ -17,21 +18,21 @@ const [src, out] = mock
 const root = new URL("..", import.meta.url);
 const read = (path) => readFileSync(new URL(path, root));
 
-const SHOW = 8; // newest stars on the rope
+const SHOW = 8; // estrellas más nuevas en la soga
 const W = 880;
 const H = 250;
-const t = 9; // rope diameter, px
-const PX = 32; // pixels per rope diameter in the pictures (tools/stargazer-sprites.ts)
-const TIP = 5; // the rope's end sits TIP diameters into tip.png
-const AVATAR = 2.4; // avatar radius, in rope diameters
-const SPARE = 7; // spare pile loop size, in rope diameters
+const t = 9; // diámetro de la soga, px
+const PX = 32; // píxeles por diámetro de soga en las imágenes (tools/stargazer-sprites.ts)
+const TIP = 5; // la punta de la soga queda TIP diámetros adentro de tip.png
+const AVATAR = 2.4; // radio del avatar, en diámetros de soga
+const SPARE = 7; // tamaño de las vueltas de la pila de reserva, en diámetros de soga
 const ACCENT = "#b9522c";
 
 const stars = decode(JSON.parse(read(src)));
 const total = stars.length;
 const shown = stars.slice(-SHOW);
 
-/** A PNG (or any fetched picture) as a data URL, with its pixel size. */
+/** Un PNG (o cualquier imagen descargada) como data URL, con su tamaño en píxeles. */
 const png = (bytes) => ({
   url: `data:image/png;base64,${Buffer.from(bytes).toString("base64")}`,
   w: bytes.readUInt32BE(16),
@@ -46,16 +47,17 @@ const avatars = await Promise.all(
   }),
 );
 
-// Knot spacing as on the stargazer page, fitted to the room left of the spare pile.
+// Espaciado de los nudos como en la página de estrellas, ajustado al lugar que queda a la izquierda
+// de la pila de reserva.
 const room = W - 250;
 const layout = ropeLayout(
   shown.map((s) => s.time),
-  shown.length + 1, // one more spot: the next star's
+  shown.length + 1, // un lugar más: el de la próxima estrella
 );
 const lastAt = layout.knots[layout.knots.length - 1] ?? 0;
-const k = Math.min(1, (room - 4 * t) / ((lastAt + 6) * t)); // squeeze a long lull to fit
-// A short rope slides right, so its knots lead up to the next star's spot instead of huddling at
-// the left edge; the spot is never left of the middle.
+const k = Math.min(1, (room - 4 * t) / ((lastAt + 6) * t)); // comprimir una pausa larga para que entre
+// Una soga corta se corre a la derecha, así sus nudos llevan hasta el lugar de la próxima estrella
+// en lugar de amontonarse en el borde izquierdo; el lugar nunca queda a la izquierda del medio.
 const fitted = layout.knots.map((d) => 3 * t + d * t * k);
 const next = Math.max(fitted.length ? fitted[fitted.length - 1] + 9 * t : 0, W * 0.45);
 const slide = fitted.length ? next - 9 * t - fitted[fitted.length - 1] : 0;
@@ -68,7 +70,7 @@ const f = (n) => Math.round(n * 100) / 100;
 
 const rope = sprite("rope");
 const parts = [];
-/** One slice of the rope picture from (x0, y0) to (x1, y1), `s` px into its pattern. */
+/** Una tajada de la imagen de la soga de (x0, y0) a (x1, y1), `s` px adentro de su patrón. */
 const lay = (x0, y0, x1, y1, s) => {
   const l = Math.hypot(x1 - x0, y1 - y0);
   const a = Math.atan2(y1 - y0, x1 - x0);
@@ -78,9 +80,9 @@ const lay = (x0, y0, x1, y1, s) => {
   );
 };
 
-// The rope, from the left edge (where it fades in) to the spare pile.
+// La soga, desde el borde izquierdo (donde aparece) hasta la pila de reserva.
 for (let x = -2 * t; x < end; x += 2 * t) lay(x, wander(x), x + 2 * t, wander(x + 2 * t), x);
-// The spare pile: the same uneven loops as on the stargazer page.
+// La pila de reserva: las mismas vueltas desparejas que en la página de estrellas.
 const ea = Math.atan(wander(end + 1) - wander(end));
 const ey = wander(end);
 const R = SPARE * t;
@@ -121,20 +123,21 @@ for (const [x, y] of pile) {
   along += Math.hypot(x - ax, y - ay);
   [ax, ay] = [x, y];
 }
-// The rope's cut end, out of the pile.
+// La punta cortada de la soga, afuera de la pila.
 const tip = sprite("tip");
 parts.push(
   `<use href="#tipimg" transform="translate(${f(lx)} ${f(ly)}) rotate(${f((dir * 180) / Math.PI)})${Math.cos(dir) < 0 ? " scale(1 -1)" : ""}" x="${-TIP * t}" y="${f(((-tip.h / PX) * t) / 2)}"/>`,
 );
 
-// Each star's knot and avatar, as on the stargazer page.
+// El nudo y el avatar de cada estrella, como en la página de estrellas.
 const r = AVATAR * t;
 const ties = [];
 const knotsSvg = [];
 const faces = [];
 const used = new Set();
 shown.forEach((star, i) => {
-  // On the chord between the rope under its picture's two ends, so both ends lie on the rope.
+  // Sobre la cuerda entre los puntos de la soga bajo las dos puntas de su imagen, así las dos
+  // puntas quedan sobre la soga.
   const kind = knotFor(star.id).id;
   const half = (sprite(kind).w / PX / 2) * t;
   const x = knotX[i];
@@ -150,8 +153,8 @@ shown.forEach((star, i) => {
     `<use href="#${kind}" transform="translate(${f(x)} ${f(y)}) rotate(${f((a * 180) / Math.PI)})"/>`,
   );
   const newest = i === shown.length - 1;
-  // The newest star: a ring pulses out round it. The face itself never animates, so a viewer
-  // that shows a still frame of the picture still shows it.
+  // La estrella más nueva: un anillo late a su alrededor. La cara misma nunca se anima, así un
+  // visor que muestra un cuadro fijo de la imagen igual la muestra.
   faces.push(
     `<image href="${avatars[i]}" x="${f(fx - r)}" y="${f(fy - r)}" width="${f(2 * r)}" height="${f(2 * r)}" clip-path="url(#round)"/><circle cx="${f(fx)}" cy="${f(fy)}" r="${f(r)}" fill="none" stroke="${newest ? ACCENT : "#fffdf9"}" stroke-width="2"/>` +
       (newest
@@ -160,13 +163,13 @@ shown.forEach((star, i) => {
   );
 });
 
-// The next star's spot: an empty, dashed avatar tied on, waiting.
+// El lugar de la próxima estrella: un avatar vacío y punteado atado, esperando.
 const nx = next;
 const ny = wander(nx);
 const nside = total % 2 ? 1 : -1;
 const nfy = ny + (t * 1.3 + r + t * 0.8) * nside;
 ties.push(`M${f(nx)} ${f(ny)}L${f(nx)} ${f(nfy)}`);
-const you = `<g class="wait" style="transform-origin:${f(nx)}px ${f(nfy)}px"><circle cx="${f(nx)}" cy="${f(nfy)}" r="${f(r)}" class="slot"/><text x="${f(nx)}" y="${f(nfy + 5)}" class="q">you?</text></g>`;
+const you = `<g class="wait" style="transform-origin:${f(nx)}px ${f(nfy)}px"><circle cx="${f(nx)}" cy="${f(nfy)}" r="${f(r)}" class="slot"/><text x="${f(nx)}" y="${f(nfy + 5)}" class="q">¿vos?</text></g>`;
 
 const defs = [
   `<image id="ropeimg" href="${rope.url}" width="${rope.w}" height="${rope.h}"/>`,
@@ -178,14 +181,14 @@ const defs = [
     return `<image id="${kind}" href="${p.url}" x="${f(-w / 2)}" y="${f(-h / 2)}" width="${f(w)}" height="${f(h)}"/>`;
   }),
   `<clipPath id="round" clipPathUnits="objectBoundingBox"><circle cx=".5" cy=".5" r=".5"/></clipPath>`,
-  // The rope fades in from the left edge.
+  // La soga aparece desde el borde izquierdo.
   `<linearGradient id="fade"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.08" stop-color="#fff"/></linearGradient>`,
   `<mask id="edge"><rect width="${W}" height="${H}" fill="url(#fade)"/></mask>`,
 ];
 
 const label = Math.min(...pile.map(([, y]) => y), ey) - t * 1.5;
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif">
-<title>${total.toLocaleString("en")} knots tied: every GitHub star ties a knot on the stargazer rope</title>
+<title>${total.toLocaleString("es-AR")} ${total === 1 ? "nudo atado" : "nudos atados"}: cada estrella en GitHub ata un nudo en la soga de estrellas</title>
 <style>
 .ink{fill:#23201c}.muted{fill:#6b645b}.accent{fill:${ACCENT}}
 .slot{fill:none;stroke:${ACCENT};stroke-width:2;stroke-dasharray:5 4}
@@ -198,19 +201,19 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" wid
 @media (prefers-reduced-motion:reduce){.ring,.wait{animation:none}}
 </style>
 <defs>${defs.join("")}</defs>
-<text x="24" y="40" class="ink" font-size="28" font-weight="800">${total.toLocaleString("en")} <tspan class="muted" font-size="15" font-weight="600">${total === 1 ? "knot" : "knots"} tied</tspan></text>
-<text x="24" y="62" class="muted" font-size="13">Every GitHub star ties a knot on the stargazer rope.</text>
+<text x="24" y="40" class="ink" font-size="28" font-weight="800">${total.toLocaleString("es-AR")} <tspan class="muted" font-size="15" font-weight="600">${total === 1 ? "nudo atado" : "nudos atados"}</tspan></text>
+<text x="24" y="62" class="muted" font-size="13">Cada estrella en GitHub ata un nudo en la soga de estrellas.</text>
 <g mask="url(#edge)">${parts.join("")}</g>
 <path d="${ties.join("")}" stroke="#6b645b" stroke-opacity="0.6" fill="none"/>
 ${knotsSvg.join("")}
 ${faces.join("")}
 ${you}
-<text x="${f(px)}" y="${f(label)}" class="accent" font-size="12" font-weight="700" text-anchor="middle">your knot goes here</text>
-<text x="${W - 24}" y="40" class="ink" font-size="14" font-weight="700" text-anchor="end">★ Star the repo to tie knot #${(total + 1).toLocaleString("en")}</text>
+<text x="${f(px)}" y="${f(label)}" class="accent" font-size="12" font-weight="700" text-anchor="middle">tu nudo va acá</text>
+<text x="${W - 24}" y="40" class="ink" font-size="14" font-weight="700" text-anchor="end">★ Dale una estrella al repo para atar el nudo #${(total + 1).toLocaleString("es-AR")}</text>
 </svg>
 `;
-// GitHub caches README images by address, so each picture gets a new file name (its hash) and the
-// README links that; the old ones are deleted.
+// GitHub cachea las imágenes del README por dirección, así que cada imagen recibe un nombre de
+// archivo nuevo (su hash) y el README enlaza ese; los viejos se borran.
 let file = out;
 if (!mock) {
   const version = createHash("sha1").update(svg).digest("hex").slice(0, 8);
@@ -225,4 +228,4 @@ if (!mock) {
 const path = new URL(file, root);
 mkdirSync(dirname(path.pathname), { recursive: true });
 writeFileSync(path, svg);
-console.log(`${file}: ${shown.length} of ${total} stars, ${Math.round(svg.length / 1024)} KB`);
+console.log(`${file}: ${shown.length} de ${total} estrellas, ${Math.round(svg.length / 1024)} KB`);

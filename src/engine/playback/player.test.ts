@@ -14,27 +14,27 @@ const make = (autoplay = true) => {
 };
 
 describe("Player", () => {
-  test("plays at its speed and tracks the step", () => {
+  test("reproduce a su velocidad y sigue el paso", () => {
     const p = make();
     p.setSpeed(2);
     p.tick(0.6);
     expect(p.getSnapshot()).toMatchObject({ time: 1.2, step: 1 });
   });
 
-  test("ignores a negative time step", () => {
+  test("ignora un paso de tiempo negativo", () => {
     const p = make();
     p.tick(-0.9);
     expect(p.getSnapshot().time).toBe(0);
   });
 
-  test("waits at the edge of what is baked", () => {
+  test("espera en el borde de lo que está bakeado", () => {
     const p = make();
     p.setReady(0.5);
     p.tick(2);
     expect(p.getSnapshot()).toMatchObject({ time: 0.5, playing: true });
   });
 
-  test("stops at the end, and play starts over", () => {
+  test("se detiene al final, y reproducir vuelve a empezar", () => {
     const p = make();
     p.tick(5);
     expect(p.getSnapshot()).toMatchObject({ time: 3, playing: false });
@@ -42,7 +42,7 @@ describe("Player", () => {
     expect(p.getSnapshot()).toMatchObject({ time: 0, playing: true });
   });
 
-  test("loops after resting on the finished knot", () => {
+  test("repite después de mostrar un rato el nudo terminado", () => {
     const p = make();
     p.toggleLoop();
     p.tick(3.5);
@@ -51,7 +51,7 @@ describe("Player", () => {
     expect(p.getSnapshot()).toMatchObject({ time: 0, playing: true });
   });
 
-  test("steps back and forth and clamps at the ends", () => {
+  test("avanza y retrocede de a pasos y se limita en los extremos", () => {
     const p = make(false);
     p.stepBy(1);
     p.stepBy(1);
@@ -61,13 +61,13 @@ describe("Player", () => {
     expect(p.getSnapshot()).toMatchObject({ time: 0, step: 0 });
   });
 
-  test("notifies only on change, with a new snapshot", () => {
+  test("avisa solo cuando cambia algo, con un snapshot nuevo", () => {
     const p = make(false);
     let calls = 0;
     p.subscribe(() => calls++);
     const before = p.getSnapshot();
-    p.tick(1); // paused: no change
-    p.seek(0); // same time
+    p.tick(1); // en pausa: sin cambios
+    p.seek(0); // mismo tiempo
     expect(calls).toBe(0);
     p.seek(1);
     expect(calls).toBe(1);

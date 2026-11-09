@@ -1,19 +1,21 @@
 import type { KnotDef, Vec3 } from "./types";
 
-// The square (reef) knot joining two ropes, tied through a bight; the camera looks from +z, so +z is
-// the bottom of the screen. Both ropes start straight: tan (rope 1) from the right, its end reaching
-// well past the origin, and blue (rope 0) from the left, a little nearer the camera. Tan's end folds back to the right into a C:
-// the standing part on the near side, the curve round the left of the origin, the tail on the far
-// side. Blue's end slides in under the curve and out over the near leg, goes under both legs, back
-// over the far leg and down through the C beside its own standing part, so both blue parts leave the
-// same way. Pull all four ends.
+// El nudo llano (de rizo) que une dos sogas, atado a través de un seno; la cámara mira desde +z,
+// así que +z es la parte de abajo de la pantalla. Las dos sogas arrancan derechas: la beige (soga
+// 1) desde la derecha, con su punta llegando bastante más allá del origen, y la azul (soga 0) desde
+// la izquierda, un poco más cerca de la cámara. La punta beige se dobla hacia atrás, a la derecha,
+// formando una C: la parte fija del lado cercano, la curva alrededor de la izquierda del origen, la
+// cola del lado lejano. La punta azul entra por debajo de la curva y sale por encima de la pata
+// cercana, pasa por debajo de las dos patas, vuelve por encima de la pata lejana y baja por adentro
+// de la C al lado de su propia parte fija, así las dos partes azules salen por el mismo lado. Tirar
+// de las cuatro puntas.
 const R = 0.012;
-const W = 0.044; // radius of tan's C: tight, so the curve takes little of the tail
-// The C's tail runs out to x = 0.285 on the far side: short, so it ends as long as blue's tail. Blue's
-// end swings round its tip, which ties the same knot as passing under it.
+const W = 0.044; // radio de la C beige: apretado, así la curva se lleva poca cola
+// La cola de la C llega hasta x = 0.285 del lado lejano: corta, así termina tan larga como la cola
+// azul. La punta azul gira alrededor de su extremo, lo que ata el mismo nudo que pasar por debajo.
 const TAN_END = 0.285;
-const BLUE_Z = 0.015; // blue runs inside the C a little to the near side, leaving room for its end
-const BLUE_END: Vec3 = [-0.18, R, 0.12]; // blue's end starts clear of where tan's curve rolls
+const BLUE_Z = 0.015; // la azul corre por adentro de la C un poco hacia el lado cercano, dejando lugar para su punta
+const BLUE_END: Vec3 = [-0.18, R, 0.12]; // la punta azul arranca lejos de donde rueda la curva beige
 const BLUE = 1.37;
 const TAN = 0.85 + Math.PI * W + TAN_END;
 const tanStart: Vec3[] = [
@@ -21,33 +23,38 @@ const tanStart: Vec3[] = [
   [0.85 - TAN, R, W],
 ];
 const blueStart: Vec3[] = [[BLUE_END[0] - BLUE, R, BLUE_END[2]], BLUE_END];
-// Fraction along each rope of a point given by its distance from the standing end.
+// Fracción a lo largo de cada soga de un punto dado por su distancia al extremo fijo.
 const blue = (d: number) => d / BLUE;
 const tan = (d: number) => d / TAN;
-const T_RIM = 0.85; // tan: where the C starts (near leg at x = 0)
-const T_FAR = T_RIM + Math.PI * W; // and where the far leg starts
+const T_RIM = 0.85; // beige: donde arranca la C (pata cercana en x = 0)
+const T_FAR = T_RIM + Math.PI * W; // y donde arranca la pata lejana
 
 export const squareKnot: KnotDef = {
   id: "square-knot",
-  name: "Square knot",
+  slug: "nudo-llano",
+  name: "Nudo llano",
   summary:
-    "Also called the reef knot. Ties two ends together snugly, for bundles, bandages and sail reefing; not for loads that matter.",
+    "También llamado nudo de rizo o cuadrado. Une dos puntas bien ajustadas, para atados, vendajes y tomar rizos en una vela; no sirve para cargas importantes.",
   ropes: [
     { length: BLUE, radius: R, color: "#2f5fb3", start: blueStart },
     { length: TAN, radius: R, start: tanStart },
   ],
   duration: 13.9,
   steps: [
-    { t: 0, title: "Fold tan's end back into a C" },
-    { t: 2.6, title: "Blue end: in under the C's curve and out over its near leg" },
-    { t: 5.2, title: "Blue end: under both legs of the C" },
-    { t: 7.3, title: "Blue end: back over the far leg and down through the C" },
-    { t: 9.9, title: "Pull the ends, then the standing parts, to set the knot" },
-    { t: 13.3, title: "Done: a square knot" },
+    { t: 0, title: "Doblá hacia atrás la punta beige formando una C" },
+    {
+      t: 2.6,
+      title:
+        "Punta azul: entra por debajo de la curva de la C y sale por encima de su pata cercana",
+    },
+    { t: 5.2, title: "Punta azul: por debajo de las dos patas de la C" },
+    { t: 7.3, title: "Punta azul: vuelve por encima de la pata lejana y baja por dentro de la C" },
+    { t: 9.9, title: "Tirá de las puntas y después de las partes fijas para asentar el nudo" },
+    { t: 13.3, title: "Listo: un nudo llano" },
   ],
   guides: [
-    // Tan's end leads the fold to the right along the far side; the curve rolls along behind it and
-    // stops round the origin. A hand holds where the C will start.
+    // La punta beige encabeza el pliegue hacia la derecha por el lado lejano; la curva rueda detrás
+    // y se detiene alrededor del origen. Una mano sostiene donde va a empezar la C.
     { rope: 1, at: tan(T_RIM), grab: 0.2, path: [{ t: 2.8 }] },
     {
       rope: 1,
@@ -58,14 +65,14 @@ export const squareKnot: KnotDef = {
         { t: 2.6, p: [TAN_END, R, -W] },
       ],
     },
-    // Lift the C's curve while blue's end slides in under it.
+    // Levantar la curva de la C mientras la punta azul entra por debajo.
     {
       rope: 1,
       at: tan(T_RIM + (Math.PI * W) / 2),
       grab: 2.6,
       path: [{ t: 3.0, p: [-W, 0.05, 0] }, { t: 3.7 }, { t: 4.1, p: [-W, R, 0] }, { t: 4.2 }],
     },
-    // Hold blue's standing part and the C's curve still while the end is worked.
+    // Sostener quietas la parte fija azul y la curva de la C mientras se trabaja con la punta.
     { at: blue(0.5), grab: 4.4, path: [{ t: 9.9 }] },
     {
       rope: 1,
@@ -73,14 +80,14 @@ export const squareKnot: KnotDef = {
       grab: 4.2,
       path: [
         { t: 7.7 },
-        // Lift the rim's far corner so the end can dive under it.
+        // Levantar la esquina lejana del borde para que la punta pueda zambullirse por debajo.
         { t: 8.2, p: [-0.035, 0.055, -0.035] },
         { t: 9.4 },
         { t: 9.7, p: [-0.035, R, -0.035] },
         { t: 9.9 },
       ],
     },
-    // One hand pinches both legs of the C and lifts them so the end can pass under.
+    // Una mano pellizca las dos patas de la C y las levanta para que la punta pueda pasar por debajo.
     {
       rope: 1,
       at: tan(T_RIM - 0.28),
@@ -96,16 +103,17 @@ export const squareKnot: KnotDef = {
     {
       at: 1,
       grab: 2.6,
-      force: 90, // drags the whole blue rope in; lighter, it lags and misses the near leg
+      force: 90, // arrastra toda la soga azul; más liviana, se atrasa y no agarra la pata cercana
       path: [
-        // Slides in under the lifted curve, over the near leg and out to the right.
+        // Entra por debajo de la curva levantada, por encima de la pata cercana y sale hacia la derecha.
         { t: 3.3, p: [-0.1, R, 0.02] },
         { t: 4.0, p: [0.06, R, BLUE_Z] },
         { t: 4.3, p: [0.1, 0.05, W] },
         { t: 4.6, p: [0.14, R, 0.1] },
         { t: 5.2, p: [0.53, R, 0.1] },
-        // Swings round like a page under the lifted near leg and round the far leg's tip, curls
-        // over the far leg into the C, then goes down under the rim's far corner and out.
+        // Gira como una página por debajo de la pata cercana levantada y alrededor de la punta de
+        // la pata lejana, se enrosca por encima de la pata lejana hacia adentro de la C, después
+        // baja por debajo de la esquina lejana del borde y sale.
         { t: 5.9, p: [0.44, R, 0.0] },
         { t: 6.3, p: [0.35, R, -0.08] },
         { t: 6.7, p: [0.27, R, -0.16] },
@@ -120,9 +128,10 @@ export const squareKnot: KnotDef = {
       ],
     },
 
-    // Pull both ends a little up the screen together, mirrored about the knot, and hold them while
-    // the standing parts are pulled apart, so blue's loop and tan's C tighten at the same time; then
-    // let go so the knot settles back onto the standing parts' line.
+    // Tirar de las dos puntas juntas un poco hacia arriba de la pantalla, en espejo respecto del
+    // nudo, y sostenerlas mientras se separan las partes fijas, así el bucle azul y la C beige se
+    // ajustan al mismo tiempo; después soltar para que el nudo se vuelva a acomodar sobre la línea
+    // de las partes fijas.
     {
       at: 1,
       grab: 9.9,

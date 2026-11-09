@@ -1,8 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
-// Tests the production build as Cloudflare Pages serves it: prerendered pages, deep links, 404.
-// Headless Chromium draws WebGL in software (a few frames a second), hence the small window and
-// long timeouts; reduced motion keeps knots from autoplaying, so each test starts paused.
+// Prueba el build de producción tal como lo sirve Cloudflare Pages: páginas prerenderizadas, links profundos, 404.
+// Chromium headless dibuja WebGL por software (unos pocos cuadros por segundo), de ahí la ventana
+// chica y los timeouts largos; el movimiento reducido evita que los nudos arranquen solos, así que
+// cada test empieza en pausa.
 export default defineConfig({
   testDir: "e2e",
   testMatch: "*.e2e.ts",

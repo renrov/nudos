@@ -1,8 +1,8 @@
-// Writes tools/stargazers.mock.json, which the dev server shows instead of the real (maybe empty)
-// public/stargazers.json: fake stars in the stargazer feed over 90 days. About
-// 10 a day (fewer at weekends), a few big days of 50 or so from a launch post or a share, and a
-// few quiet stretches with none.
-// Run: node tools/mock-stargazers.mjs
+// Escribe tools/stargazers.mock.json, que el servidor de desarrollo muestra en lugar del
+// public/stargazers.json real (quizás vacío): estrellas falsas en el feed de stargazers a lo largo
+// de 90 días. Unas 10 por día (menos los fines de semana), unos pocos días grandes de unas 50 por
+// un post de lanzamiento o algo compartido, y algunos tramos tranquilos sin ninguna.
+// Correr: node tools/mock-stargazers.mjs
 import { writeFileSync } from "node:fs";
 import { encode } from "./stargazers.mjs";
 
@@ -18,7 +18,8 @@ const pick = (list) => list[Math.floor(rand() * list.length)];
 const DAY = 86_400_000;
 const days = 90;
 const start = Date.parse("2026-08-03");
-// [day, extra stars that day]: a usual day brings about 10; a launch post or a share brings 50.
+// [día, estrellas extra ese día]: un día común trae unas 10; un post de lanzamiento o algo
+// compartido trae 50.
 const bursts = [
   [18, 48],
   [19, 18],
@@ -26,7 +27,7 @@ const bursts = [
   [48, 12],
   [71, 22],
 ];
-// Days nobody starred: a quiet weekend, a slow week, a lone dead day.
+// Días en que nadie dio estrella: un fin de semana tranquilo, una semana lenta, un día muerto suelto.
 const quiet = new Set([30, 31, 32, 33, 58, 59, 80]);
 const adjectives = [
   "swift",
@@ -79,8 +80,8 @@ for (let d = 0; d < days; d++) {
   }
 }
 stars.sort((a, b) => a.time - b.time);
-// Two quiet weeks before the newest 5 stars: everything older moves 14 days back, so the rope shows
-// what a long lull looks like right where it opens.
+// Dos semanas tranquilas antes de las 5 estrellas más nuevas: todo lo anterior se corre 14 días
+// para atrás, así la soga muestra cómo se ve una pausa larga justo donde abre.
 for (const star of stars.slice(0, -5)) star.time -= 14 * DAY;
 writeFileSync(new URL("stargazers.mock.json", import.meta.url), encode(stars));
-console.log(`${stars.length} stars`);
+console.log(`${stars.length} estrellas`);

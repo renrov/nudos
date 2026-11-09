@@ -5,7 +5,10 @@ import { StarIcon } from "../../shared/ui/icons";
 import { type Feed, decodeFeed } from "./feed";
 import styles from "./stargazers.module.css";
 
-/** The pill that leads to the stargazer rope, with room for the latest three stargazers' faces, so loading them moves nothing. */
+/**
+ * La pastilla que lleva a la soga de estrellas, con lugar para las caras de los últimos tres
+ * stargazers, así cargarlas no mueve nada.
+ */
 export function StargazerLink({
   to,
   src,
@@ -29,14 +32,16 @@ export function StargazerLink({
               .map((s) => `${s.user.avatar_url}&s=40`),
           ),
       )
-      .catch(() => {}); // The pill works without faces.
+      .catch(() => {}); // La pastilla funciona sin caras.
     return () => {
       alive = false;
     };
   });
   return (
     <Link className={className} to={to}>
-      <StarIcon /> Stargazer<span className={styles.rope}> rope</span>
+      <StarIcon />
+      <span className={styles.rope}>Soga de estrellas</span>
+      <span className={styles.ropeShort}>Estrellas</span>
       <span className={styles.pillFaces} aria-hidden="true">
         {[0, 1, 2].map((i) =>
           faces[i] ? (

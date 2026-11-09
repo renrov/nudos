@@ -4,8 +4,8 @@ import { decode, encode, merge } from "./stargazers.mjs";
 
 const star = (login, id, iso) => ({ login, id, time: Date.parse(iso) });
 
-describe("stargazer feed", () => {
-  it("round-trips through the page's decoder", () => {
+describe("feed de stargazers", () => {
+  it("va y vuelve a través del decodificador de la página", () => {
     const stars = [star("b", 2, "2026-10-02T08:00:00Z"), star("a", 1, "2026-10-01T09:30:00Z")];
     const feed = JSON.parse(encode(stars));
     expect(decode(feed)).toEqual([stars[1], stars[0]]);
@@ -18,7 +18,7 @@ describe("stargazer feed", () => {
     );
   });
 
-  it("keeps knots once tied, at their first star, under the current login", () => {
+  it("conserva los nudos una vez atados, en su primera estrella, con el login actual", () => {
     const tied = [
       star("old-name", 1, "2026-10-01T00:00:00Z"),
       star("gone", 2, "2026-10-02T00:00:00Z"),

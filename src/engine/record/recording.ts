@@ -3,10 +3,10 @@ import type { Guide, GuideKey, KnotDef, Prop, RopeDef, Step, Vec3 } from "../kno
 
 const R = 0.012;
 const BLUE = "#2f5fb3";
-/** Seconds between the keys a moving hand records. */
+/** Segundos entre las keys que graba una mano en movimiento. */
 export const KEY_EVERY = 0.1;
 
-/** What the recorder starts from: ropes laid out on the table, and props to tie round. */
+/** Desde dónde arranca el grabador: sogas tendidas sobre la mesa, y props para atar alrededor. */
 export interface Preset {
   name: string;
   ropes: RopeDef[];
@@ -23,7 +23,7 @@ const straight = (from: number, to: number, z = 0, color?: string): RopeDef => (
   color,
 });
 
-/** A bight: the standing part from the left along the near side, round at x = apex, back to x = end. */
+/** Un seno: la parte fija desde la izquierda por el lado cercano, la vuelta en x = apex, de regreso hasta x = end. */
 function bight(from: number, apex: number, end: number, half: number): RopeDef {
   const start: Vec3[] = [[from, R, half]];
   for (let i = 0; i <= 8; i++) {
@@ -35,21 +35,21 @@ function bight(from: number, apex: number, end: number, half: number): RopeDef {
 }
 
 export const PRESETS: Preset[] = [
-  { name: "Straight rope, 1.2 m", ropes: [straight(-0.6, 0.6)] },
-  { name: "Straight rope, 2 m", ropes: [straight(-0.9, 1.1)] },
-  { name: "Bight", ropes: [bight(-0.9, 0.2, -0.45, 0.05)] },
-  { name: "Two ropes", ropes: [straight(-0.7, 0.5, 0.06, BLUE), straight(-0.5, 0.7, -0.06)] },
-  ...knots.map((k) => ({ name: `Start of ${k.name}`, ropes: k.ropes, props: k.props })),
+  { name: "Soga recta, 1,2 m", ropes: [straight(-0.6, 0.6)] },
+  { name: "Soga recta, 2 m", ropes: [straight(-0.9, 1.1)] },
+  { name: "Seno", ropes: [bight(-0.9, 0.2, -0.45, 0.05)] },
+  { name: "Dos sogas", ropes: [straight(-0.7, 0.5, 0.06, BLUE), straight(-0.5, 0.7, -0.06)] },
+  ...knots.map((k) => ({ name: `Inicio: ${k.name}`, ropes: k.ropes, props: k.props })),
 ];
 
-/** Everything recorded: the starting layout (by preset name), the finished moves and step titles. */
+/** Todo lo grabado: el layout inicial (por nombre de preset), los movimientos terminados y los títulos de los pasos. */
 export interface Recording {
   preset: string;
   guides: Guide[];
   steps: Step[];
 }
 
-/** A hand's moves while it is held: where it grabbed and where it was every KEY_EVERY seconds. */
+/** Los movimientos de una mano mientras está agarrada: dónde agarró y dónde estaba cada KEY_EVERY segundos. */
 export interface Track {
   rope: number;
   at: number;
@@ -62,8 +62,8 @@ export interface Track {
 const round = (v: number, places = 3) => Number(v.toFixed(places));
 
 /**
- * The guide that replays a track, letting go at `release`. A point that did not move is written
- * as a bare key (hold still), and a run of those keeps only its last one.
+ * La guía que repite un recorrido, soltando en `release`. Un punto que no se movió se escribe como
+ * una key pelada (quedarse quieto), y de una racha de esas solo queda la última.
  */
 export function toGuide(track: Track, release: number): Guide {
   const path: GuideKey[] = [];
@@ -91,15 +91,16 @@ export function presetOf(recording: Recording): Preset {
   return PRESETS.find((p) => p.name === recording.preset) ?? PRESETS[0];
 }
 
-/** The recording as a knot the app can bake: it runs until the last hand lets go, and a little after. */
+/** La grabación como un nudo que la app puede bakear: corre hasta que suelta la última mano, y un poquito más. */
 export function knotOf(recording: Recording): KnotDef {
   const { ropes, props } = presetOf(recording);
   const end = Math.max(0, ...recording.guides.map((g) => g.path[g.path.length - 1].t));
   const steps = [...recording.steps].sort((a, b) => a.t - b.t);
-  if (!steps.length || steps[0].t > 0) steps.unshift({ t: 0, title: "Start" });
+  if (!steps.length || steps[0].t > 0) steps.unshift({ t: 0, title: "Inicio" });
   return {
     id: "recorded",
-    name: "Recorded knot",
+    slug: "grabado",
+    name: "Nudo grabado",
     summary: "",
     ropes,
     ...(props ? { props } : {}),
@@ -109,7 +110,7 @@ export function knotOf(recording: Recording): KnotDef {
   };
 }
 
-/** The knot as TypeScript for a file in src/engine/knots: points and keys on one line each. */
+/** El nudo como TypeScript para un archivo en src/engine/knots: puntos y keys en una línea cada uno. */
 export function formatKnot(knot: KnotDef): string {
   const json = JSON.stringify(knot, null, 2)
     .replace(/\[\s+(-?[\d.e-]+),\s+(-?[\d.e-]+),\s+(-?[\d.e-]+)\s+\]/g, "[$1, $2, $3]")

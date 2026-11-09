@@ -5,7 +5,10 @@ import { DEFAULT_PHYSICS, FPS, RopeSim, type RopePhysics } from "./rope";
 export interface BakeChunk {
   start: number;
   frames: Float32Array;
-  /** Per-particle material normal, n * 3 floats per frame (all ropes one after another), to keep the strand twist on the rope. */
+  /**
+   * Normal de material por partícula, n * 3 floats por cuadro (todas las sogas una después de la
+   * otra), para mantener la torsión de los cordones sobre la soga.
+   */
   normals: Float32Array;
 }
 
@@ -13,7 +16,7 @@ export function frameCount(knot: KnotDef): number {
   return Math.round(knot.duration * FPS) + 1;
 }
 
-/** Runs the whole knot and hands back positions and normals in chunks of frames (n * 3 floats each). */
+/** Corre todo el nudo y devuelve posiciones y normales en tandas de cuadros (n * 3 floats cada una). */
 export function bake(
   knot: KnotDef,
   onChunk: (chunk: BakeChunk) => void,
@@ -36,7 +39,10 @@ export function bake(
   }
 }
 
-/** The knot's first frame (its start pose), cheap enough to compute on the main thread while the rest bakes. */
+/**
+ * El primer cuadro del nudo (su pose inicial), lo bastante barato para calcularlo en el hilo
+ * principal mientras se bakea el resto.
+ */
 export function firstFrame(knot: KnotDef, physics: RopePhysics = DEFAULT_PHYSICS): BakeChunk {
   const sim = new RopeSim(knot, physics);
   const frames = new Float32Array(sim.n * 3);
@@ -45,7 +51,10 @@ export function firstFrame(knot: KnotDef, physics: RopePhysics = DEFAULT_PHYSICS
   return { start: 0, frames, normals };
 }
 
-/** Copies the sim's positions and each rope's material normals into frame buffers at `offset`. */
+/**
+ * Copia las posiciones de la simulación y las normales de material de cada soga a los buffers de
+ * cuadros en `offset`.
+ */
 function capturer(sim: RopeSim) {
   const materials = sim.ropes.map((r) => new MaterialFrames(r.count));
   return (frames: Float32Array, normals: Float32Array, offset: number) => {

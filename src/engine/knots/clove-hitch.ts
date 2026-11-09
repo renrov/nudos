@@ -1,21 +1,23 @@
 import type { KnotDef } from "./types";
 
-// A rail runs along x at z = 0, raised on two supports so rope can pass under it; the camera looks
-// from +z, so the near side (+z) is the bottom of the screen. The standing part lies straight on the
-// near side, from its end at z = 0.45 up to the rail at x = -0.06, and goes over it; the working end
-// lies on the far side in a U opening to the right, its tip pointing at the rail. The top of the rail
-// is at 0.449 along the rope.
+// Una barra corre a lo largo de x en z = 0, elevada sobre dos soportes para que la soga pueda pasar
+// por debajo; la cámara mira desde +z, así que el lado cercano (+z) es la parte de abajo de la
+// pantalla. La parte fija está derecha sobre el lado cercano, desde su extremo en z = 0.45 hasta la
+// barra en x = -0.06, y pasa por encima; la punta está del lado lejano en una U que abre hacia la
+// derecha, con la punta apuntando a la barra. La parte de arriba de la barra está a 0.449 a lo
+// largo de la soga.
 const R = 0.012;
-const RAIL = 0.016; // rail radius
-const RAIL_Y = RAIL + 3 * R; // rail centre height: rope passes under it without being pinched on the table
-const TOP = RAIL_Y + RAIL + R; // centre height of rope lying on the rail
-const SPAN = 0.4; // the supports stand at x = ±SPAN
+const RAIL = 0.016; // radio de la barra
+const RAIL_Y = RAIL + 3 * R; // altura del centro de la barra: la soga pasa por debajo sin quedar apretada contra la mesa
+const TOP = RAIL_Y + RAIL + R; // altura del centro de la soga apoyada sobre la barra
+const SPAN = 0.4; // los soportes están en x = ±SPAN
 
 export const cloveHitch: KnotDef = {
   id: "clove-hitch",
-  name: "Clove hitch – rope end",
+  slug: "ballestrinque",
+  name: "Ballestrinque – con la punta",
   summary:
-    "Ties a rope to a rail or post quickly. Easy to adjust, but it can slip when the load turns the rail.",
+    "Ata una soga a una barra o a un poste en un toque. Se ajusta fácil, pero puede correrse si la carga hace girar la barra.",
   ropes: [
     {
       length: 1.079,
@@ -44,42 +46,43 @@ export const cloveHitch: KnotDef = {
   ],
   duration: 9.2,
   steps: [
-    { t: 0, title: "Lay the rope over the rail" },
-    { t: 0.4, title: "Bring the end round and under the rail" },
-    { t: 2.6, title: "Cross over the standing part" },
-    { t: 4.0, title: "Round the rail again" },
-    { t: 5.4, title: "Tuck the end under the crossing" },
-    { t: 6.8, title: "Pull both ends to tighten" },
-    { t: 8.4, title: "Done: a clove hitch" },
+    { t: 0, title: "Apoyá la soga sobre la barra" },
+    { t: 0.4, title: "Pasá la punta alrededor y por debajo de la barra" },
+    { t: 2.6, title: "Cruzá por encima de la parte fija" },
+    { t: 4.0, title: "Dale otra vuelta a la barra" },
+    { t: 5.4, title: "Meté la punta por debajo del cruce" },
+    { t: 6.8, title: "Tirá de las dos puntas para ajustar" },
+    { t: 8.4, title: "Listo: un ballestrinque" },
   ],
   guides: [
-    // Holds the standing part just short of the rail while the end goes round.
+    // Sujeta la parte fija justo antes de la barra mientras la punta da la vuelta.
     { at: 0.332, grab: 0.4, path: [{ t: 6.8 }] },
 
-    // The end. The rope behind it falls into loose turns, as when tying by hand; the pull tightens them.
+    // La punta. La soga de atrás cae en vueltas sueltas, como cuando se ata a mano; el tirón las ajusta.
     {
       at: 1,
       grab: 0.4,
       force: 150,
       path: [
-        // Tip first, straight under the rail to the near side, just right of the standing part.
+        // Punta primero, derecho por debajo de la barra hacia el lado cercano, justo a la derecha
+        // de la parte fija.
         { t: 1.4, p: [-0.01, R + 0.002, -0.03] },
         { t: 2.1, p: [-0.02, R + 0.002, 0.06] },
         { t: 2.6, p: [-0.01, 0.03, 0.13] },
 
-        // Up over the rail to the far left, crossing over the standing part on top.
+        // Arriba por encima de la barra hacia el fondo a la izquierda, cruzando por encima de la parte fija.
         { t: 3.0, p: [-0.02, 0.06, 0.08] },
         { t: 3.4, p: [-0.06, TOP + 0.03, 0] },
         { t: 3.7, p: [-0.11, 0.07, -0.07] },
         { t: 4.0, p: [-0.15, 0.04, -0.12] },
 
-        // Down behind and under the rail again, left of the standing part.
+        // Abajo por detrás y por debajo de la barra otra vez, a la izquierda de la parte fija.
         { t: 4.4, p: [-0.12, R + 0.002, -0.05] },
         { t: 4.7, p: [-0.12, R + 0.002, 0.06] },
         { t: 5.0, p: [-0.14, 0.03, 0.13] },
 
-        // Up through the middle, under the crossing, and out to the far side. It runs on the rail
-        // left of the standing part (x ≈ -0.06), not on top of it.
+        // Arriba por el medio, por debajo del cruce, y afuera hacia el lado lejano. Corre sobre la
+        // barra a la izquierda de la parte fija (x ≈ -0.06), no por encima de ella.
         { t: 5.4, p: [-0.11, 0.06, 0.08] },
         { t: 5.9, p: [-0.09, TOP + 0.003, -0.005] },
         { t: 6.3, p: [-0.09, 0.07, -0.08] },
@@ -87,7 +90,7 @@ export const cloveHitch: KnotDef = {
       ],
     },
 
-    // Lifts the crossing off the rail so the end can go under it, then lays it back down.
+    // Levanta el cruce de la barra para que la punta pueda pasar por debajo, y después lo vuelve a apoyar.
     {
       at: 0.701,
       grab: 5.2,
@@ -98,8 +101,9 @@ export const cloveHitch: KnotDef = {
       ],
     },
 
-    // Two fingers slide the turns along the rail towards each other, under it where they lie, and hold
-    // them there while the ends are pulled, so the hitch closes up instead of staying as wide as it was laid.
+    // Dos dedos deslizan las vueltas por la barra, una hacia la otra, por debajo de donde están, y
+    // las sostienen ahí mientras se tira de las puntas, así el ballestrinque se cierra en lugar de
+    // quedar tan ancho como se tendió.
     {
       at: 0.538,
       grab: 6.8,
@@ -115,8 +119,9 @@ export const cloveHitch: KnotDef = {
       path: [{ t: 7.3, p: [-0.123, 2.2 * R, -0.008] }, { t: 8.4 }],
     },
 
-    // Pull the end away to the far side and the standing part to the near side. Each leaves the
-    // knot beside the other's turn and is pulled across towards it, so the turns close up along the rail.
+    // Tirar de la punta hacia el lado lejano y de la parte fija hacia el lado cercano. Cada una
+    // sale del nudo al lado de la vuelta de la otra y se tira cruzando hacia ella, así las vueltas
+    // se cierran a lo largo de la barra.
     {
       at: 1,
       grab: 7.2,

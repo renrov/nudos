@@ -1,6 +1,7 @@
-// Renders the stargazer rope's pictures with the real rope: a straight strip that tiles along the
-// rope, the rope's end, and each single-rope knot finished. Top view, transparent background, at PX pixels per
-// rope diameter. Driven by stargazer-sprites.mjs, which saves window.sprites to public/stargazers/.
+// Renderiza las imágenes de la soga de estrellas con la soga real: una tira recta que se repite a
+// lo largo de la soga, la punta de la soga y cada nudo de una sola soga terminado. Vista de arriba,
+// fondo transparente, a PX píxeles por diámetro de soga. Lo maneja stargazer-sprites.mjs, que
+// guarda window.sprites en public/stargazers/.
 import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { figureEight } from "../src/engine/knots/figure-eight";
@@ -12,9 +13,9 @@ import { KEY_LIGHT } from "../src/engine/render/stage";
 import { type BakeChunk, bake, firstFrame } from "../src/engine/sim/bake";
 import { particleCount } from "../src/engine/sim/rope";
 
-const PX = 32; // pixels per rope diameter; the page reads the same number
-const KNOTS = [overhand, figureEight]; // the knots in src/app/features/stargazers/layout.ts
-const D = (rope: RopeDef) => 2 * rope.radius * 1.08; // drawn diameter: ropeMesh's VISUAL_SCALE
+const PX = 32; // píxeles por diámetro de soga; la página lee el mismo número
+const KNOTS = [overhand, figureEight]; // los nudos de src/app/features/stargazers/layout.ts
+const D = (rope: RopeDef) => 2 * rope.radius * 1.08; // diámetro dibujado: el VISUAL_SCALE de ropeMesh
 
 const renderer = new THREE.WebGLRenderer({
   alpha: true,
@@ -35,7 +36,10 @@ key.position.copy(KEY_LIGHT);
 scene.add(key, new THREE.HemisphereLight("#fff4e6", "#a8875c", 0.35));
 const material = createRopeMaterial("#c39f6a", renderer.capabilities.getMaxAnisotropy());
 
-/** A top-down picture `w`×`h` diameters of `knot`'s rope around `center`, with `axis` (in the table's xz) pointing right. */
+/**
+ * Una imagen vista desde arriba de `w`×`h` diámetros de la soga de `knot` alrededor de `center`,
+ * con `axis` (en el xz de la mesa) apuntando a la derecha.
+ */
 function shoot(
   knot: KnotDef,
   p: Float32Array,
@@ -59,7 +63,7 @@ function shoot(
     0.01,
     2,
   );
-  camera.up.set(axis.z, 0, -axis.x); // so the camera's right is `axis`
+  camera.up.set(axis.z, 0, -axis.x); // así la derecha de la cámara es `axis`
   camera.position.copy(center).setY(1);
   camera.lookAt(center.x, 0, center.z);
   renderer.render(scene, camera);
@@ -73,7 +77,8 @@ function shoot(
 
 const at = (p: Float32Array, i: number) => new THREE.Vector3(p[i * 3], p[i * 3 + 1], p[i * 3 + 2]);
 
-// The strip: a whole number of strand turns (ropeMesh's LAY is 7 radii a turn), so it tiles.
+// La tira: una cantidad entera de vueltas de los cordones (el LAY de ropeMesh es 7 radios por
+// vuelta), así se repite sin cortes.
 const straight = firstFrame(overhand);
 const R = overhand.ropes[0].radius;
 const strip = shoot(
@@ -86,7 +91,10 @@ const strip = shoot(
   2,
 );
 
-/** Fade a picture's rope out over `left`/`right` diameters at its sides, to melt into the strip. */
+/**
+ * Desvanecer la soga de una imagen a lo largo de `left`/`right` diámetros en sus costados, para que
+ * se funda con la tira.
+ */
 function fade(picture: HTMLCanvasElement, w: number, left: number, right: number) {
   const ctx = picture.getContext("2d")!;
   const g = ctx.createLinearGradient(0, 0, picture.width, 0);
@@ -101,9 +109,10 @@ function fade(picture: HTMLCanvasElement, w: number, left: number, right: number
 }
 
 /**
- * Turns and shifts a knot picture so the rope going in on the left and out on the right both sit
- * on its middle line: then the page can lay it over its rope without a step at either side.
- * Measures the solid rope (not its soft shadow) a little in from each edge.
+ * Gira y desplaza la imagen de un nudo para que la soga que entra por la izquierda y la que sale
+ * por la derecha queden las dos sobre su línea media: así la página la puede poner sobre su soga
+ * sin escalón de ningún lado.
+ * Mide la soga sólida (no su sombra suave) un poco hacia adentro de cada borde.
  */
 function level(picture: HTMLCanvasElement) {
   const { width: W, height: H } = picture;
@@ -128,14 +137,14 @@ function level(picture: HTMLCanvasElement) {
     ctx.translate(W / 2, H / 2 + dy);
     ctx.rotate(turn);
     ctx.drawImage(from, -W / 2, -H / 2);
-    ctx.resetTransform(); // fade() draws on this context next
+    ctx.resetTransform(); // fade() dibuja sobre este contexto después
     return out;
   };
   const level = draw(picture, -Math.atan2(middle(picture, x1) - middle(picture, x0), x1 - x0), 0);
   return draw(level, 0, H / 2 - (middle(level, x0) + middle(level, x1)) / 2);
 }
 
-/** `def`'s rope at the end of its bake, and the particles that touch a distant part of it. */
+/** La soga de `def` al final de su bakeo, y las partículas que tocan una parte lejana de ella. */
 function finished(def: KnotDef) {
   const rope = def.ropes[0];
   const n = particleCount(rope);
@@ -152,14 +161,14 @@ function finished(def: KnotDef) {
         break;
       }
   const d = D(rope);
-  const perD = (n - 1) / (rope.length / d); // particles in a diameter
+  const perD = (n - 1) / (rope.length / d); // partículas en un diámetro
   return { rope, n, p, nrm, close, d, perD };
 }
 
 /**
- * A knot tied in the rope, laid along the line through the rope either side of it, cropped to the
- * knot and STUB diameters of rope either side. The rope runs on past the picture's edges, so it
- * fades out there instead of stopping short.
+ * Un nudo atado en la soga, tendido sobre la línea que pasa por la soga a cada lado, recortado al
+ * nudo y a STUB diámetros de soga de cada lado. La soga sigue más allá de los bordes de la imagen,
+ * así se desvanece ahí en lugar de cortarse.
  */
 const STUB = 2.5;
 function inline(def: KnotDef) {
@@ -171,7 +180,7 @@ function inline(def: KnotDef) {
   const middle = close
     .reduce((c, i) => c.add(at(p, i)), new THREE.Vector3())
     .divideScalar(close.length);
-  // On the line through the rope either side, so the stubs line up with the strip.
+  // Sobre la línea que pasa por la soga a cada lado, así los cabos quedan alineados con la tira.
   const center = a.clone().addScaledVector(axis, middle.clone().sub(a).dot(axis));
   const body = bounds(p, close[0], close[close.length - 1], center, axis, d, 0);
   const w = body.w + 2 * Math.ceil(STUB);
@@ -179,7 +188,7 @@ function inline(def: KnotDef) {
   return fade(level(shoot(def, p, nrm, center, axis, w, h)), w, 1.5, 1.5);
 }
 
-/** The smallest even size in diameters that holds particles `ia`..`ib` round `center`, plus `pad`. */
+/** El tamaño par más chico en diámetros que contiene las partículas `ia`..`ib` alrededor de `center`, más `pad`. */
 function bounds(
   p: Float32Array,
   ia: number,
@@ -200,8 +209,8 @@ function bounds(
   return { w: 2 * Math.ceil(along / d + pad), h: 2 * Math.ceil(across / d + pad) };
 }
 
-// The rope's end, as the knot page draws it: crimped sleeve and cut strands. The end of the rope
-// sits TIP diameters from the picture's left edge; the page reads the same number.
+// La punta de la soga, como la dibuja la página del nudo: casquillo engarzado y cordones cortados.
+// La punta de la soga queda a TIP diámetros del borde izquierdo de la imagen; la página lee el mismo número.
 const TIP = 5;
 const n = particleCount(overhand.ropes[0]);
 const endX = straight.frames[(n - 1) * 3];

@@ -13,6 +13,7 @@ import { ResetViewButton, ViewerCanvas, type StartViewer } from "../features/vie
 import { useMountEffect } from "../shared/hooks";
 import {
   REPO_URL,
+  SITE_NAME,
   STARGAZERS_DATA,
   STARGAZERS_PATH,
   knotImagePath,
@@ -22,11 +23,11 @@ import { iconButtonClass } from "../shared/ui/IconButton";
 import { EyeIcon, EyeOffIcon, GitHubIcon } from "../shared/ui/icons";
 import styles from "./KnotScreen.module.css";
 
-/** A knot's whole page: the 3D view, its name and summary, the player, the picker and the links. */
+/** La página entera de un nudo: la vista 3D, su nombre y resumen, el reproductor, el selector y los links. */
 export function KnotScreen({ knot }: { knot: KnotDef }) {
   const [params] = useSearchParams();
   const physics = physicsFromParams(params);
-  // A new knot or rope material starts a fresh session (viewer, bake, player) by remounting.
+  // Un nudo o un material de soga nuevo arranca una sesión nueva (visor, bakeo, reproductor) al volver a montar.
   return <Session key={`${knot.id} ${JSON.stringify(physics)}`} knot={knot} physics={physics} />;
 }
 
@@ -37,7 +38,7 @@ function Session({
   knot: KnotDef;
   physics: ReturnType<typeof physicsFromParams>;
 }) {
-  // Plain data, so the prerendered page shows the same first step and duration as the browser.
+  // Datos planos, así la página prerenderizada muestra el mismo primer paso y la misma duración que el navegador.
   const [player] = useState(() => Player.forKnot(knot));
   const [viewer, setViewer] = useState<KnotViewer | null>(null);
   const [clean, setClean] = useState(false);
@@ -48,7 +49,7 @@ function Session({
     return session.dispose;
   };
 
-  // H hides or shows every control, for a clean view of the rope.
+  // H oculta o muestra todos los controles, para ver la soga limpia.
   useMountEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key.toLowerCase() !== "h" || e.metaKey || e.ctrlKey || e.altKey) return;
@@ -70,19 +71,19 @@ function Session({
           href={REPO_URL}
           target="_blank"
           rel="noopener"
-          aria-label="View source on GitHub"
+          aria-label="Ver el código en GitHub"
         >
           <GitHubIcon />
         </a>
         <button
           type="button"
           className={`${iconButtonClass} ${styles.hide}`}
-          aria-label={clean ? "Show controls (H)" : "Hide controls (H)"}
-          title={clean ? "Show controls (H)" : "Hide controls (H)"}
+          aria-label={clean ? "Mostrar controles (H)" : "Ocultar controles (H)"}
+          title={clean ? "Mostrar controles (H)" : "Ocultar controles (H)"}
           aria-pressed={clean}
           onClick={(e) => {
             setClean(!clean);
-            // After a mouse click, give Space back to play/pause.
+            // Después de un clic con el mouse, devolverle la barra espaciadora a reproducir/pausar.
             if (e.detail > 0) e.currentTarget.blur();
           }}
         >
@@ -90,7 +91,7 @@ function Session({
         </button>
       </header>
       <section className={`${styles.intro} ${styles.chrome}`}>
-        <p className={styles.eyebrow}>Knots made easy</p>
+        <p className={styles.eyebrow}>{SITE_NAME}</p>
         <h1>{knot.name}</h1>
         <p className={styles.summary}>{knot.summary}</p>
       </section>
@@ -101,7 +102,7 @@ function Session({
           steps={knot.steps}
           extra={
             <>
-              <ShareButton name={knot.name} path={knotPath(knot.id)} />
+              <ShareButton name={knot.name} path={knotPath(knot)} />
               <ResetViewButton viewer={viewer} />
             </>
           }
@@ -109,7 +110,7 @@ function Session({
         <Tuner />
       </div>
       <footer className={`${styles.credit} ${styles.chrome}`}>
-        made by{" "}
+        hecho por{" "}
         <a href="https://x.com/baz7c8" target="_blank" rel="noopener">
           @baz7c8
         </a>

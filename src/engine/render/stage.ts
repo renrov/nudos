@@ -4,11 +4,11 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import type { Prop } from "../knots/types";
 
 const BACKGROUND = "#ece7de";
-const RESET_TIME = 400; // ms for the camera to ease back to the default view
-/** Where the key light sits; the rope shades its contact darkening by it too. */
+const RESET_TIME = 400; // ms que tarda la cámara en volver suave a la vista predeterminada
+/** Dónde está la luz principal; la soga también calcula con ella el oscurecimiento de contacto. */
 export const KEY_LIGHT = new THREE.Vector3(-0.6, 1.6, 0.9);
 
-/** A fixed prop, drawn from the same axis and radius the simulation collides with. */
+/** Un prop fijo, dibujado con el mismo eje y radio con los que colisiona la simulación. */
 export function createPropMesh({ kind, a, b, radius }: Prop): THREE.Mesh {
   const axis = new THREE.Vector3(...b).sub(new THREE.Vector3(...a));
   const length = axis.length();
@@ -25,7 +25,7 @@ export function createPropMesh({ kind, a, b, radius }: Prop): THREE.Mesh {
   return mesh;
 }
 
-/** Renderer, camera and a softly lit table for the rope to lie on. */
+/** Renderer, cámara y una mesa con luz suave para que apoye la soga. */
 export function createStage(canvas: HTMLCanvasElement) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -46,7 +46,7 @@ export function createStage(canvas: HTMLCanvasElement) {
   key.castShadow = true;
   key.shadow.mapSize.set(2048, 2048);
   key.shadow.radius = 5;
-  key.shadow.intensity = 0.65; // the fill and room light reach into the shade; full-strength shadows read too heavy
+  key.shadow.intensity = 0.65; // la luz de relleno y la del ambiente llegan a la sombra; las sombras a plena intensidad se ven demasiado pesadas
   key.shadow.bias = -0.0004;
   key.shadow.normalBias = 0.002;
   Object.assign(key.shadow.camera, {
@@ -58,7 +58,8 @@ export function createStage(canvas: HTMLCanvasElement) {
     far: 3.5,
   });
   scene.add(key);
-  // Weak warm fill from below and around, so shadows read soft brown, never black or grey.
+  // Relleno cálido y débil desde abajo y alrededor, así las sombras se leen como un marrón suave,
+  // nunca negras ni grises.
   scene.add(new THREE.HemisphereLight("#fff4e6", "#a8875c", 0.35));
 
   const table = new THREE.Mesh(
@@ -70,28 +71,28 @@ export function createStage(canvas: HTMLCanvasElement) {
   scene.add(table);
 
   const camera = new THREE.PerspectiveCamera(30, 1, 0.01, 20);
-  camera.position.set(0.02, 1.15, 0.69); // about 60° above the table
+  camera.position.set(0.02, 1.15, 0.69); // unos 60° por encima de la mesa
   const controls = new OrbitControls(camera, canvas);
   controls.target.set(0.02, 0.02, 0.04);
   controls.enableDamping = true;
   controls.minDistance = 0.25;
   controls.maxDistance = 2.5;
-  controls.maxPolarAngle = Math.PI * 0.47; // stay above the table
+  controls.maxPolarAngle = Math.PI * 0.47; // quedarse por encima de la mesa
   controls.update();
-  controls.saveState(); // the default view that resetView returns to
+  controls.saveState(); // la vista predeterminada a la que vuelve resetView
 
   const viewListeners = new Set<() => void>();
   const notifyView = () => viewListeners.forEach((l) => l());
   controls.addEventListener("change", notifyView);
-  // The pointer handlers move the camera through update() themselves, so the loop's own
-  // update() can return false after a drag step; the change event catches those.
+  // Los handlers del puntero mueven la cámara con su propio update(), así que el update() del loop
+  // puede devolver false después de un paso de arrastre; el evento change atrapa esos casos.
   let viewMoved = false;
   controls.addEventListener("change", () => (viewMoved = true));
   const isDefaultView = () =>
     camera.position.distanceTo(controls.position0) < 1e-3 &&
     controls.target.distanceTo(controls.target0) < 1e-3;
 
-  // A reset eases from where the view is to the default over RESET_TIME.
+  // Un reset va suave desde donde está la vista hasta la predeterminada a lo largo de RESET_TIME.
   let reset: { from: THREE.Vector3; target: THREE.Vector3; start: number } | null = null;
   const stepReset = (now: number) => {
     if (!reset) return false;
@@ -101,27 +102,27 @@ export function createStage(canvas: HTMLCanvasElement) {
     controls.target.lerpVectors(reset.target, controls.target0, e);
     if (u === 1) {
       reset = null;
-      controls.reset(); // lands exactly and drops any leftover drag momentum
+      controls.reset(); // llega exacto y descarta cualquier inercia de arrastre que quede
     }
     notifyView();
     return true;
   };
 
-  // Resizing clears the canvas, so the next frame has to draw.
+  // Cambiar el tamaño limpia el canvas, así que el próximo cuadro tiene que dibujar.
   let resized = true;
   const resize = () => {
     resized = true;
     const { clientWidth: w, clientHeight: h } = canvas;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
-    // Keep the whole rope in view on narrow screens.
+    // Mantener toda la soga a la vista en pantallas angostas.
     camera.fov = w / h < 1 ? 30 / Math.max(0.55, w / h) : 30;
     camera.updateProjectionMatrix();
   };
   const observer = new ResizeObserver(resize);
   observer.observe(canvas);
   resize();
-  // A restored context starts blank; a paused knot would otherwise stay that way.
+  // Un contexto restaurado arranca en blanco; si no, un nudo en pausa quedaría así.
   const restored = () => (resized = true);
   canvas.addEventListener("webglcontextrestored", restored);
 
@@ -131,21 +132,21 @@ export function createStage(canvas: HTMLCanvasElement) {
     camera,
     controls,
     /**
-     * Draws a frame if the scene changed or the view moved, eased or resized; returns whether it drew.
-     * Leave `sceneChanged` out to draw every frame.
+     * Dibuja un cuadro si cambió la escena o si la vista se movió, está volviendo o cambió de tamaño;
+     * devuelve si dibujó. Dejá afuera `sceneChanged` para dibujar todos los cuadros.
      */
     render(now: number, sceneChanged = true) {
       const easing = stepReset(now);
-      const moved = controls.update(); // also carries damping drift after a drag
+      const moved = controls.update(); // también lleva la inercia del damping después de un arrastre
       if (!sceneChanged && !easing && !moved && !viewMoved && !resized) return false;
       viewMoved = resized = false;
       renderer.render(scene, camera);
       return true;
     },
-    /** Eases the camera back to the default view; jumps when motion is reduced. */
+    /** Lleva la cámara suave de vuelta a la vista predeterminada; salta si el movimiento está reducido. */
     resetView(now: number, instant = false) {
-      // Spend any drag momentum now: with damping on, it would carry the camera off the default
-      // after the reset lands (an update without damping applies and clears it).
+      // Gastar ya cualquier inercia de arrastre: con el damping activado, sacaría a la cámara de la
+      // vista predeterminada después de que llega el reset (un update sin damping la aplica y la limpia).
       controls.enableDamping = false;
       controls.update();
       controls.enableDamping = true;
@@ -155,7 +156,7 @@ export function createStage(canvas: HTMLCanvasElement) {
       } else reset = { from: camera.position.clone(), target: controls.target.clone(), start: now };
     },
     isDefaultView,
-    /** Calls `listener` whenever the camera moves; returns an unsubscribe. */
+    /** Llama a `listener` cada vez que se mueve la cámara; devuelve una función para desuscribirse. */
     onViewChange(listener: () => void) {
       viewListeners.add(listener);
       return () => viewListeners.delete(listener);

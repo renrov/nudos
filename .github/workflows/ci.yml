@@ -1,5 +1,5 @@
-# Checks every pull request and every push to main: the same four commands AGENTS.md asks for
-# before committing, plus the production build.
+# Revisa cada pull request y cada push a main: los mismos cuatro comandos que AGENTS.md pide
+# antes de commitear, más el build de producción.
 name: CI
 
 on:
@@ -33,6 +33,6 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm exec oxfmt --check
-      # Includes the bake fingerprint of every knot: it fails when a change alters how a knot ties.
+      # Incluye la huella del bakeo de cada nudo: falla cuando un cambio altera cómo se ata un nudo.
       - run: pnpm test
       - run: pnpm build
