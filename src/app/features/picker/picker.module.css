@@ -27,11 +27,11 @@
   border-radius: 20px;
   background: var(--paper);
   color: var(--ink);
-  box-shadow: 0 24px 64px -16px rgb(35 32 28 / 0.45);
+  box-shadow: 0 24px 64px -16px rgb(27 34 54 / 0.45);
 }
 
 .dialog::backdrop {
-  background: rgb(35 32 28 / 0.4);
+  background: rgb(27 34 54 / 0.4);
   backdrop-filter: blur(3px);
 }
 
@@ -87,7 +87,7 @@
 }
 
 .card:hover {
-  border-color: rgb(35 32 28 / 0.25);
+  border-color: rgb(27 34 54 / 0.25);
 }
 
 .card:active {

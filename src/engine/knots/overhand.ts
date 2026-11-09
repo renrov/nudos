@@ -28,6 +28,12 @@ export const overhand: KnotDef = {
     { t: 4.6, title: "Tirá de las dos puntas para ajustar" },
     { t: 6.6, title: "Listo: un nudo simple" },
   ],
+  parts: [
+    { name: "punta", at: 0.97 },
+    { name: "parte fija", at: 0.2 },
+    // El lado lejano del círculo, el que levanta la mano de la fase 2.
+    { name: "bucle", at: 0.6, from: 2.2, to: 4.6 },
+  ],
   guides: [
     // Fase 1: una mano lleva la punta en redondo y por encima de la soga; la soga de atrás cae en
     // un círculo (centro cerca de (0.06, 0)) al lado del punto sostenido, cruzándose a su

@@ -2,7 +2,7 @@ import { knots } from "../knots";
 import type { Guide, GuideKey, KnotDef, Prop, RopeDef, Step, Vec3 } from "../knots/types";
 
 const R = 0.012;
-const BLUE = "#2f5fb3";
+const BLUE = "#2b4a79";
 /** Segundos entre las keys que graba una mano en movimiento. */
 export const KEY_EVERY = 0.1;
 

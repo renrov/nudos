@@ -88,6 +88,30 @@ export const daisyChain: KnotDef = {
       title: "Listo: una cadeneta. Soltá la punta y tirá de ella para deshacer la cadena",
     },
   ],
+  parts: [
+    { name: "punta corta", at: A(0.05) },
+    // El primer bucle mientras se arma, y el seno que se pasa por él, cierra el lazo y queda como
+    // el bucle por el que pasa el primer eslabón.
+    { name: "bucle", at: A(0.601), from: 0.4, to: 3.9 },
+    { name: "seno", at: A(1.071), from: 3.9, to: 8.4 },
+    { name: "bucle", at: A(1.071), from: 8.4, to: 11.4 },
+    // Cada eslabón (ver `link` en guides): el seno que pasa una mano, que después es el bucle más
+    // nuevo, hasta que lo atraviesa el seno siguiente.
+    { name: "seno", at: A(1.43), from: 8.4, to: 11.4 },
+    { name: "bucle", at: A(1.43), from: 11.4, to: 15.1 },
+    { name: "seno", at: A(1.79), from: 12.1, to: 15.1 },
+    { name: "bucle", at: A(1.79), from: 15.1, to: 18.8 },
+    { name: "seno", at: A(2.15), from: 15.8, to: 18.8 },
+    { name: "bucle", at: A(2.15), from: 18.8, to: 22.5 },
+    { name: "seno", at: A(2.57), from: 19.5, to: 22.5 },
+    { name: "bucle", at: A(2.57), from: 22.5, to: 26.2 },
+    { name: "seno", at: A(2.99), from: 23.2, to: 26.2 },
+    { name: "último bucle", at: A(2.99), from: 26.2 },
+    // Lo que queda libre de la parte larga, que la cadena va consumiendo.
+    { name: "parte larga", at: A(1.6), to: 8.4 },
+    { name: "parte larga", at: A(3.2), from: 8.4, to: 26.6 },
+    { name: "punta", at: 0.99, from: 26.6 },
+  ],
   guides: [
     // Sostener la soga donde se va a cruzar el bucle, y levantarla un poco para que el otro lado pase por debajo.
     {

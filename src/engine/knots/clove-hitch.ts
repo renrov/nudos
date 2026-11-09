@@ -54,6 +54,12 @@ export const cloveHitch: KnotDef = {
     { t: 6.8, title: "Tirá de las dos puntas para ajustar" },
     { t: 8.4, title: "Listo: un ballestrinque" },
   ],
+  parts: [
+    { name: "punta", at: 0.97 },
+    { name: "parte fija", at: 0.32 },
+    // El tramo que cruza por encima de la parte fija y se levanta para la pasada.
+    { name: "cruce", at: 0.701, from: 3.6, to: 6.8 },
+  ],
   guides: [
     // Sujeta la parte fija justo antes de la barra mientras la punta da la vuelta.
     { at: 0.332, grab: 0.4, path: [{ t: 6.8 }] },

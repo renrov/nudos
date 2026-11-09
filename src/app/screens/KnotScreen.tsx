@@ -9,7 +9,7 @@ import { KnotPicker } from "../features/picker";
 import { PlayerBar, ShareButton } from "../features/player";
 import { StarPrompt, StargazerLink } from "../features/stargazers";
 import { Tuner, physicsFromParams } from "../features/tuner";
-import { ResetViewButton, ViewerCanvas, type StartViewer } from "../features/viewer";
+import { PartsButton, ResetViewButton, ViewerCanvas, type StartViewer } from "../features/viewer";
 import { useMountEffect } from "../shared/hooks";
 import {
   REPO_URL,
@@ -103,6 +103,7 @@ function Session({
           steps={knot.steps}
           extra={
             <>
+              <PartsButton viewer={viewer} />
               <ShareButton name={knot.name} path={knotPath(knot)} />
               <ResetViewButton viewer={viewer} />
             </>

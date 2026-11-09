@@ -38,7 +38,7 @@ export interface RopeDef {
    */
   start: Vec3[];
   /**
-   * Color de la soga, por ejemplo "#2f5fb3". Dejalo afuera para el beige natural; dale a cada soga
+   * Color de la soga, por ejemplo "#2b4a79". Dejalo afuera para el beige natural; dale a cada soga
    * de un empalme su propio color.
    */
   color?: string;
@@ -51,6 +51,23 @@ export interface Prop {
   a: Vec3;
   b: Vec3;
   radius: number;
+}
+
+/** Una parte de la soga con nombre, para marcarla en vivo mientras se aprende el nudo. */
+export interface RopePart {
+  /**
+   * Cómo la llaman los pasos: "punta", "parte fija", "bucle", "seno"… Sin el color de la soga: en un
+   * nudo de varias sogas, la etiqueta ya va del color de la suya.
+   */
+  name: string;
+  /** Índice en `KnotDef.ropes`. Dejalo afuera para la primera soga. */
+  rope?: number;
+  /** Dónde sobre la soga: 0 es el extremo fijo, 1 es la punta. */
+  at: number;
+  /** Segundos desde los que existe esa parte; afuera, desde el principio. */
+  from?: number;
+  /** Segundos hasta los que existe; afuera, hasta el final. */
+  to?: number;
 }
 
 export interface Step {
@@ -73,4 +90,6 @@ export interface KnotDef {
   duration: number;
   steps: Step[];
   guides: Guide[];
+  /** Lo que marca el botón de partes; sin esto, la punta y la parte fija (ver `partsOf`). */
+  parts?: RopePart[];
 }

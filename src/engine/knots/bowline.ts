@@ -37,6 +37,13 @@ export const bowline: KnotDef = {
     { t: 14.5, title: "Sostené la cola contra la gaza y tirá de la parte fija" },
     { t: 17.4, title: "Listo: un as de guía" },
   ],
+  parts: [
+    { name: "punta", at: 0.98 },
+    { name: "parte fija", at: 0.06 },
+    // El lado lejano del bucle chico, y la mitad de la gaza, entre sus dos lados sostenidos.
+    { name: "bucle chico", at: 0.324, from: 1.6, to: 14.5 },
+    { name: "gaza", at: 0.6, from: 6 },
+  ],
   guides: [
     // Sujeta la parte fija contra la mesa; una vez que la punta la rodeó, tirar de la punta la
     // haría girar para cualquier lado.

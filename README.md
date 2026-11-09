@@ -31,7 +31,7 @@ Mirá cómo se atan los nudos, paso a paso, con una soga simulada con física de
 
 Cada estrella en GitHub ata un nudo. Dale una estrella al repo y tu cara se suma a la soga.
 
-[![La soga de estrellas](.github/stargazer-rope-c4d25249.svg)](https://renrov.github.io/nudos/estrellas/)
+[![La soga de estrellas](.github/stargazer-rope-7087c982.svg)](https://renrov.github.io/nudos/estrellas/)
 
 ## Cómo correrlo
 

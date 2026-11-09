@@ -26,7 +26,7 @@ const PX = 32; // píxeles por diámetro de soga en las imágenes (tools/stargaz
 const TIP = 5; // la punta de la soga queda TIP diámetros adentro de tip.png
 const AVATAR = 2.4; // radio del avatar, en diámetros de soga
 const SPARE = 7; // tamaño de las vueltas de la pila de reserva, en diámetros de soga
-const ACCENT = "#b9522c";
+const ACCENT = "#c62f2b";
 
 const stars = decode(JSON.parse(read(src)));
 const total = stars.length;
@@ -156,7 +156,7 @@ shown.forEach((star, i) => {
   // La estrella más nueva: un anillo late a su alrededor. La cara misma nunca se anima, así un
   // visor que muestra un cuadro fijo de la imagen igual la muestra.
   faces.push(
-    `<image href="${avatars[i]}" x="${f(fx - r)}" y="${f(fy - r)}" width="${f(2 * r)}" height="${f(2 * r)}" clip-path="url(#round)"/><circle cx="${f(fx)}" cy="${f(fy)}" r="${f(r)}" fill="none" stroke="${newest ? ACCENT : "#fffdf9"}" stroke-width="2"/>` +
+    `<image href="${avatars[i]}" x="${f(fx - r)}" y="${f(fy - r)}" width="${f(2 * r)}" height="${f(2 * r)}" clip-path="url(#round)"/><circle cx="${f(fx)}" cy="${f(fy)}" r="${f(r)}" fill="none" stroke="${newest ? ACCENT : "#fbfcfd"}" stroke-width="2"/>` +
       (newest
         ? `<circle class="ring" cx="${f(fx)}" cy="${f(fy)}" r="${f(r)}" style="transform-origin:${f(fx)}px ${f(fy)}px"/>`
         : ""),
@@ -190,21 +190,21 @@ const label = Math.min(...pile.map(([, y]) => y), ey) - t * 1.5;
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif">
 <title>${total.toLocaleString("es-AR")} ${total === 1 ? "nudo atado" : "nudos atados"}: cada estrella en GitHub ata un nudo en la soga de estrellas</title>
 <style>
-.ink{fill:#23201c}.muted{fill:#6b645b}.accent{fill:${ACCENT}}
+.ink{fill:#1b2236}.muted{fill:#56607a}.accent{fill:${ACCENT}}
 .slot{fill:none;stroke:${ACCENT};stroke-width:2;stroke-dasharray:5 4}
 .q{fill:${ACCENT};font-size:12px;font-weight:700;text-anchor:middle}
 .ring{fill:none;stroke:${ACCENT};stroke-width:2;animation:ring 2s ease-out infinite}
 .wait{animation:wait 1.8s ease-in-out infinite}
 @keyframes ring{from{transform:scale(1);opacity:.9}to{transform:scale(1.7);opacity:0}}
 @keyframes wait{50%{transform:scale(1.08)}}
-@media (prefers-color-scheme:dark){.ink{fill:#f3eee6}.muted{fill:#b3aa9e}.accent,.q{fill:#e0794f}.slot,.ring{stroke:#e0794f}}
+@media (prefers-color-scheme:dark){.ink{fill:#eef1f6}.muted{fill:#a9b2c4}.accent,.q{fill:#e4544f}.slot,.ring{stroke:#e4544f}}
 @media (prefers-reduced-motion:reduce){.ring,.wait{animation:none}}
 </style>
 <defs>${defs.join("")}</defs>
 <text x="24" y="40" class="ink" font-size="28" font-weight="800">${total.toLocaleString("es-AR")} <tspan class="muted" font-size="15" font-weight="600">${total === 1 ? "nudo atado" : "nudos atados"}</tspan></text>
 <text x="24" y="62" class="muted" font-size="13">Cada estrella en GitHub ata un nudo en la soga de estrellas.</text>
 <g mask="url(#edge)">${parts.join("")}</g>
-<path d="${ties.join("")}" stroke="#6b645b" stroke-opacity="0.6" fill="none"/>
+<path d="${ties.join("")}" stroke="#56607a" stroke-opacity="0.6" fill="none"/>
 ${knotsSvg.join("")}
 ${faces.join("")}
 ${you}

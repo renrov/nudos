@@ -3,7 +3,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import type { Prop } from "../knots/types";
 
-const BACKGROUND = "#ece7de";
+const BACKGROUND = "#e8eaee";
 const RESET_TIME = 400; // ms que tarda la cámara en volver suave a la vista predeterminada
 /** Dónde está la luz principal; la soga también calcula con ella el oscurecimiento de contacto. */
 export const KEY_LIGHT = new THREE.Vector3(-0.6, 1.6, 0.9);
@@ -16,7 +16,7 @@ export function createPropMesh({ kind, a, b, radius }: Prop): THREE.Mesh {
     kind === "capsule"
       ? new THREE.CapsuleGeometry(radius, length, 8, 24)
       : new THREE.CylinderGeometry(radius, radius, length, 32),
-    new THREE.MeshStandardMaterial({ color: "#8a7458", roughness: 0.7 }),
+    new THREE.MeshStandardMaterial({ color: "#a7abb2", roughness: 0.45, metalness: 0.6 }),
   );
   mesh.position.set(...a).addScaledVector(axis, 0.5);
   mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), axis.normalize());
@@ -58,13 +58,13 @@ export function createStage(canvas: HTMLCanvasElement) {
     far: 3.5,
   });
   scene.add(key);
-  // Relleno cálido y débil desde abajo y alrededor, así las sombras se leen como un marrón suave,
-  // nunca negras ni grises.
-  scene.add(new THREE.HemisphereLight("#fff4e6", "#a8875c", 0.35));
+  // Relleno débil desde abajo y alrededor, así las sombras se leen como un azul grisáceo suave,
+  // nunca negras.
+  scene.add(new THREE.HemisphereLight("#f6f8fb", "#8691a6", 0.35));
 
   const table = new THREE.Mesh(
     new THREE.PlaneGeometry(12, 12),
-    new THREE.MeshStandardMaterial({ color: "#e4ddd1", roughness: 0.95 }),
+    new THREE.MeshStandardMaterial({ color: "#dfe2e7", roughness: 0.95 }),
   );
   table.rotation.x = -Math.PI / 2;
   table.receiveShadow = true;

@@ -1,1 +1,1 @@
-export { ResetViewButton, ViewerCanvas, type StartViewer } from "./ViewerCanvas";
+export { PartsButton, ResetViewButton, ViewerCanvas, type StartViewer } from "./ViewerCanvas";

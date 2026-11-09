@@ -43,7 +43,101 @@
   transition: opacity 160ms ease;
 }
 
+/* Prendido, se marca como el botón de repetir. */
+.partsToggle {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--muted);
+}
+
+.partsToggle[aria-pressed="true"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/*
+ * Las etiquetas de las partes: un punto sobre la soga y el nombre arriba. Cada una se mueve con
+ * transform desde la esquina de la capa, que cubre el canvas sin recibir clics.
+ */
+.parts {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.parts > div {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.parts > div::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  top: -6px;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--paper);
+  border-radius: 50%;
+  background: var(--celeste);
+  box-shadow: 0 1px 4px rgb(27 34 54 / 0.35);
+  box-sizing: border-box;
+}
+
+.parts > div::after {
+  content: "";
+  position: absolute;
+  left: -1px;
+  bottom: 6px;
+  width: 2px;
+  height: calc(16px + var(--lift, 0px));
+  background: var(--part, var(--navy));
+}
+
+.parts > div[data-down="true"]::after {
+  top: 6px;
+  bottom: auto;
+}
+
+/* 22px: LABEL_GAP en viewer.ts. */
+.parts span {
+  position: absolute;
+  left: 0;
+  bottom: calc(22px + var(--lift, 0px));
+  transform: translateX(-50%);
+  padding: 3px 9px 4px;
+  border-radius: 999px;
+  background: var(--part, var(--navy));
+  color: var(--part-ink, var(--paper));
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgb(27 34 54 / 0.3);
+}
+
 .reset:disabled {
   opacity: 0.4;
   cursor: default;
+}
+
+.parts > div[data-down="true"] span {
+  top: calc(22px + var(--lift, 0px));
+  bottom: auto;
+}
+
+/* Como los de la barra de reproducción en los celulares más angostos. */
+@media (max-width: 350px) {
+  .reset,
+  .partsToggle {
+    width: 30px;
+    height: 30px;
+  }
 }

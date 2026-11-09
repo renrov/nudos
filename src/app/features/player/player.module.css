@@ -81,7 +81,7 @@
 }
 
 .ready {
-  background: rgb(35 32 28 / 0.12);
+  background: rgb(27 34 54 / 0.12);
 }
 
 .played {
@@ -169,7 +169,7 @@
 
 .speed input:checked + span {
   background: var(--paper);
-  box-shadow: 0 1px 2px rgb(35 32 28 / 0.2);
+  box-shadow: 0 1px 2px rgb(27 34 54 / 0.2);
 }
 
 .speed input:focus-visible + span {
@@ -239,13 +239,37 @@
   pointer-events: none;
 }
 
-/* En los celulares más angostos el contador de tiempo deja lugar, así los botones quedan en una fila. */
-@media (max-width: 350px) {
+/*
+ * En celulares el contador de tiempo deja lugar, así los botones (velocidad, repetir, partes,
+ * compartir y vista) quedan en una fila; el paso actual ya dice por dónde va.
+ */
+@media (max-width: 420px) {
   .clock {
     display: none;
   }
 
+  .speed span {
+    padding: 4px 7px;
+  }
+
   .speed {
     margin-right: auto;
+  }
+}
+
+/* En los más angostos (320 px), los botones redondos se achican un poco para entrar en la fila. */
+@media (max-width: 350px) {
+  .bar {
+    gap: 10px 4px;
+  }
+
+  .speed span {
+    padding: 4px 5px;
+  }
+
+  .loop,
+  .share {
+    width: 30px;
+    height: 30px;
   }
 }

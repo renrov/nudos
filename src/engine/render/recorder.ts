@@ -25,7 +25,7 @@ const LIFT_STEP = 0.005; // metros por cada W/S o muesca de la rueda
 const PICK_UP = 3; // una mano nueva planea levantar su punto esta cantidad de radios, como dedos que lo agarran
 const MAX_HEIGHT = 0.2;
 const UNDO_DEPTH = 200;
-const ACCENT = "#b9522c";
+const ACCENT = "#c62f2b";
 const STEM = 0.09; // la manija para levantar de la mano elegida queda a esta altura sobre su punto
 const HANDLE_PX = 18; // qué tan cerca de la punta de la manija tiene que ser un clic
 

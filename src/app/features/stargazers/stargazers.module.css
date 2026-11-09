@@ -6,9 +6,9 @@
   touch-action: none;
   /* Un charco suave de luz donde está la soga, sobre una trama de lino tenue, así la soga apoya sobre algo. */
   background:
-    radial-gradient(ellipse 70% 45% at 50% 62%, rgb(255 253 249 / 0.55), transparent 75%),
-    repeating-linear-gradient(0deg, rgb(35 32 28 / 0.018) 0 1px, transparent 1px 3px),
-    repeating-linear-gradient(90deg, rgb(35 32 28 / 0.018) 0 1px, transparent 1px 3px);
+    radial-gradient(ellipse 70% 45% at 50% 62%, rgb(251 252 253 / 0.55), transparent 75%),
+    repeating-linear-gradient(0deg, rgb(27 34 54 / 0.018) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgb(27 34 54 / 0.018) 0 1px, transparent 1px 3px);
 }
 
 .tip {
@@ -38,7 +38,7 @@
   padding: 14px 16px 16px;
   border: 1px solid rgb(255 255 255 / 0.55);
   border-radius: var(--radius);
-  background: rgb(255 253 249 / 0.7);
+  background: rgb(251 252 253 / 0.7);
   backdrop-filter: blur(18px) saturate(1.5);
   box-shadow: var(--shadow);
 }
@@ -81,7 +81,7 @@
   display: block;
   height: 100%;
   border-radius: 4px;
-  background: linear-gradient(90deg, #d9853b, var(--accent));
+  background: linear-gradient(90deg, var(--gold), var(--accent));
   transition: width 300ms ease;
 }
 
@@ -133,7 +133,7 @@
   margin-left: -8px;
   border: 2px solid var(--paper);
   border-radius: 50%;
-  background: #d8cfc2;
+  background: #d3d8df;
 }
 
 .faces img:first-child {
@@ -222,7 +222,7 @@
 .learn {
   flex-basis: 100%;
   padding-top: 6px;
-  border-top: 1px solid rgb(185 82 44 / 0.18);
+  border-top: 1px solid rgb(198 47 43 / 0.18);
   font-size: 12px;
   font-weight: 600;
   color: var(--ink);
@@ -382,6 +382,18 @@
 
   .ropeShort {
     display: inline;
+  }
+}
+
+/* En los más angostos la pastilla queda solo con la estrella; el nombre sigue ahí para los lectores de pantalla. */
+@media (max-width: 360px) {
+  .ropeShort {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }
 

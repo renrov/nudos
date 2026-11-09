@@ -30,7 +30,7 @@ const picture = (name: string) => `${import.meta.env.BASE_URL}stargazers/${name}
 export const PICTURES = ["rope", "tip", ...KNOT_KINDS.map((k) => k.id)].map(picture);
 const AVATAR = 2.4; // radio del avatar, en diámetros de soga: más grande que un nudo, así la gente va primero
 const SPARE = 7; // tamaño de las vueltas en la pila suelta de soga que queda para las estrellas nuevas, en diámetros de soga
-const ACCENT = "#b9522c";
+const ACCENT = "#c62f2b";
 /** La fuente de la página (ver global.css), para los textos que se dibujan en el canvas. */
 const FONT = '"Archivo", ui-sans-serif, system-ui, sans-serif';
 const POP = 420; // ms para que un nudo nuevo se ajuste y su avatar aparezca
@@ -532,7 +532,7 @@ export class StarRope {
       return at === undefined ? 1 : popOut(Math.min((now - at) / POP, 1));
     };
     this.spots = [];
-    ctx.strokeStyle = "rgb(35 32 28 / 0.35)";
+    ctx.strokeStyle = "rgb(27 34 54 / 0.35)";
     ctx.lineWidth = 1;
     ctx.beginPath();
     const tied: [number, number, number, number][] = []; // x, y y ángulo del nudo, estrella
@@ -586,14 +586,14 @@ export class StarRope {
       const cut = this.face(i, r);
       if (cut) ctx.drawImage(cut, x - rr, y - rr, rr * 2, rr * 2);
       else {
-        ctx.fillStyle = "#d8cfc2";
+        ctx.fillStyle = "#d3d8df";
         ctx.beginPath();
         ctx.arc(x, y, rr, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.beginPath();
       ctx.arc(x, y, rr, 0, Math.PI * 2);
-      ctx.strokeStyle = found || hover || i === this.tied - 1 ? ACCENT : "#fffdf9";
+      ctx.strokeStyle = found || hover || i === this.tied - 1 ? ACCENT : "#fbfcfd";
       ctx.lineWidth = found || hover ? 2.5 : 2;
       ctx.stroke();
       if (found) {
@@ -617,7 +617,7 @@ export class StarRope {
         ctx.beginPath();
         ctx.roundRect(x - w / 2, ty, w, 24, 12);
         ctx.fill();
-        ctx.fillStyle = "#fffdf9";
+        ctx.fillStyle = "#fbfcfd";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(label, x, ty + 12);
@@ -641,7 +641,7 @@ export class StarRope {
       ctx.moveTo(x, y);
       ctx.lineTo(sx - Math.sin(a) * -r * side, sy + Math.cos(a) * -r * side);
       ctx.stroke();
-      ctx.fillStyle = "rgb(255 253 249 / 0.7)";
+      ctx.fillStyle = "rgb(251 252 253 / 0.7)";
       ctx.beginPath();
       ctx.arc(sx, sy, r, 0, Math.PI * 2);
       ctx.fill();

@@ -51,8 +51,8 @@ export const zeppelin: KnotDef = {
   name: "Nudo Zeppelin",
   summary: "Une dos sogas de forma segura. Aguanta mucha carga y aun así después se desata fácil.",
   ropes: [
-    { length: BLUE, radius: R, color: "#2f5fb3", start: blueStart },
-    { length: RED, radius: R, start: redStart },
+    { length: BLUE, radius: R, color: "#2b4a79", start: blueStart },
+    { length: RED, radius: R, color: "#c62f2b", start: redStart },
   ],
   duration: 11.7,
   // Cada movimiento arranca mientras termina el anterior, así las manos nunca quedan todas quietas.
@@ -64,6 +64,15 @@ export const zeppelin: KnotDef = {
     { t: 6.4, title: "Cola roja: por encima del lado lejano y hacia abajo por los dos bucles" },
     { t: 8.9, title: "Tirá de las colas y después de las partes fijas para asentar el nudo" },
     { t: 11.1, title: "Listo: un nudo Zeppelin" },
+  ],
+  parts: [
+    { name: "punta", at: 0.97 },
+    { name: "punta", rope: 1, at: 0.97 },
+    { name: "parte fija", at: blue(0.6) },
+    { name: "parte fija", rope: 1, at: red(0.55) },
+    // La parte de abajo de cada U, que sostienen las manos mientras pasan las colas.
+    { name: "bucle", rope: 1, at: red(R_LOW), from: 2.0, to: 8.9 },
+    { name: "bucle", at: blue(B_TOP), from: 4.0, to: 8.9 },
   ],
   guides: [
     // Las manos sostienen cada U donde está, así llevar las colas en redondo no puede sacar los

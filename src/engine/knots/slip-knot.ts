@@ -33,6 +33,13 @@ export const slipKnot: KnotDef = {
     { t: 5.9, title: "Tirá del seno y de la parte fija para ajustar" },
     { t: 8.1, title: "Listo: un nudo corredizo. Tirá de la punta corta para deshacerlo" },
   ],
+  parts: [
+    { name: "punta corta", at: 0.97 },
+    { name: "parte fija", at: 0.15 },
+    // El lado cercano del bucle, el que se levanta en la fase 2, y el seno que pellizca la otra mano.
+    { name: "bucle", at: 0.5, from: 2.5, to: 5.9 },
+    { name: "seno", at: 0.84, from: 3.75 },
+  ],
   guides: [
     // Fase 1: una mano lleva la punta en redondo por el lado lejano y por encima de la soga hacia
     // la cámara, y después tiende la cola hacia abajo y a la izquierda; el bucle va cediendo soga mientras tanto.

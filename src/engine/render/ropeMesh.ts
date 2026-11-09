@@ -36,7 +36,7 @@ const NEAR = 12; // partes de otra soga más cercanas que se recuerdan por part�
 // fuerte de una soga retorcida.
 const GROOVE = [0.5, 0.49, 0.5];
 const DIRT = [0.78, 0.76, 0.76]; // desgaste más gris y oscuro donde la soga se aprieta contra la soga en el nudo
-const CONTACT_SHADOW = 0x4a3524; // marrón cálido, así la sombra debajo de la soga no es gris
+const CONTACT_SHADOW = 0x262d40; // azul oscuro, como la tinta del sitio, así la sombra debajo de la soga no es un gris muerto
 const TO_LIGHT = KEY_LIGHT.clone().normalize();
 
 /**

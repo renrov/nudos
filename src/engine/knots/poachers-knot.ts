@@ -105,6 +105,13 @@ export const poachersKnot: KnotDef = {
     { t: 10.32, title: "Tirá del seno para un lado y de las dos puntas para el otro para ajustar" },
     { t: 11.23, title: "Listo: un nudo de cazador furtivo" },
   ],
+  parts: [
+    { name: "punta", at: 0.97 },
+    { name: "parte fija", at: onS(-0.3) },
+    // La punta del seno, que al final es el lazo que se cierra.
+    { name: "seno", at: T0 / LENGTH, to: 10.32 },
+    { name: "lazo", at: T0 / LENGTH, from: 10.32 },
+  ],
   guides: [
     { at: onS(-0.45), grab: 0.2, force: 250, path: [{ t: 10.32 }] },
     { at: onS(APEX - 0.08), grab: 0.2, force: 250, path: [{ t: 10.32 }] },

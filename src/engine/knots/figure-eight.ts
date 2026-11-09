@@ -39,6 +39,12 @@ export const figureEight: KnotDef = {
     { t: 13.2, title: "Tirá de las dos puntas para ajustar" },
     { t: 16.6, title: "Listo: un nudo de ocho" },
   ],
+  parts: [
+    { name: "punta", at: 0.97 },
+    { name: "parte fija", at: 0.3 },
+    // El lado lejano del ojo que sostienen los pines.
+    { name: "bucle chico", at: tip(0.71), from: 3.9, to: 13.2 },
+  ],
   guides: [
     // Los pines del ancla y del ojo sostienen hasta que el tirón toma el control, si no la parte
     // fija se arrastra.

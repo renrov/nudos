@@ -134,9 +134,9 @@ const out = document.createElement("canvas");
 out.width = W;
 out.height = H;
 const ctx = out.getContext("2d")!;
-const INK = "#23201c";
-const MUTED = "#6d665c";
-const ACCENT = "#b9522c";
+const INK = "#1b2236";
+const MUTED = "#56607a";
+const ACCENT = "#c62f2b";
 const FONT = '"Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
 /** Alegreya, la fuente de los textos de lectura del sitio: acá, la instrucción de cada paso. */
 const READING = '"Alegreya", Georgia, serif';
@@ -163,11 +163,11 @@ function drawHands(sim: number, positions: Float32Array, u: number) {
     const alpha = ramp((sim - g.grab) / 0.2) * ramp((end - sim) / 0.3);
     const r = 28 * u;
     const glow = ctx.createRadialGradient(x, y, 0, x, y, r * 2.2);
-    glow.addColorStop(0, `rgba(185,82,44,${0.7 * alpha})`);
-    glow.addColorStop(1, "rgba(185,82,44,0)");
+    glow.addColorStop(0, `rgba(198,47,43,${0.7 * alpha})`);
+    glow.addColorStop(1, "rgba(198,47,43,0)");
     ctx.fillStyle = glow;
     ctx.fillRect(x - r * 2.2, y - r * 2.2, r * 4.4, r * 4.4);
-    ctx.strokeStyle = `rgba(255,253,249,${0.95 * alpha})`;
+    ctx.strokeStyle = `rgba(251,252,253,${0.95 * alpha})`;
     ctx.lineWidth = 3 * u;
     ctx.beginPath();
     ctx.arc(x, y, r * 0.55, 0, Math.PI * 2);
@@ -178,8 +178,8 @@ function drawHands(sim: number, positions: Float32Array, u: number) {
 function overlay(v: number, sim: number, positions: Float32Array) {
   // Una viñeta suave lleva la mirada al centro.
   const g = ctx.createRadialGradient(W / 2, H / 2, H * 0.45, W / 2, H / 2, H * 1.0);
-  g.addColorStop(0, "rgba(70,50,30,0)");
-  g.addColorStop(1, "rgba(70,50,30,0.22)");
+  g.addColorStop(0, "rgba(27,34,54,0)");
+  g.addColorStop(1, "rgba(27,34,54,0.22)");
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
 

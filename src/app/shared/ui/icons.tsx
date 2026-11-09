@@ -20,6 +20,8 @@ export const PauseIcon = icon("M7 5h3.5v14H7zM13.5 5H17v14h-3.5z", true);
 export const LoopIcon = icon("M7 7h9.5l-2-2M17 17H7.5l2 2M4 12a5 5 0 0 1 3-5M20 12a5 5 0 0 1-3 5");
 /** Una flecha circular alrededor de un punto: volver a la vista inicial. */
 export const ResetViewIcon = icon("M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4.5v3.2h3.2M12 11.2v1.6");
+/** Una etiqueta colgando: las partes de la soga, con nombre. */
+export const PartsIcon = icon("M3.5 12.5V4.5a1 1 0 0 1 1-1h8l8 8-9 9zM8 8h.01");
 export const StarIcon = icon(
   "M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z",
 );

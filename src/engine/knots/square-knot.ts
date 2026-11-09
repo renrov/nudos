@@ -36,7 +36,7 @@ export const squareKnot: KnotDef = {
   summary:
     "También llamado nudo de rizo o cuadrado. Une dos puntas bien ajustadas, para atados, vendajes y tomar rizos en una vela; no sirve para cargas importantes.",
   ropes: [
-    { length: BLUE, radius: R, color: "#2f5fb3", start: blueStart },
+    { length: BLUE, radius: R, color: "#2b4a79", start: blueStart },
     { length: TAN, radius: R, start: tanStart },
   ],
   duration: 13.9,
@@ -51,6 +51,14 @@ export const squareKnot: KnotDef = {
     { t: 7.3, title: "Punta azul: vuelve por encima de la pata lejana y baja por dentro de la C" },
     { t: 9.9, title: "Tirá de las puntas y después de las partes fijas para asentar el nudo" },
     { t: 13.3, title: "Listo: un nudo llano" },
+  ],
+  parts: [
+    { name: "punta", at: 0.97 },
+    { name: "punta", rope: 1, at: 0.97 },
+    { name: "parte fija", at: blue(1.05) },
+    { name: "parte fija", rope: 1, at: tan(0.45) },
+    // La curva de la C, la que se levanta para que entre la punta azul.
+    { name: "C", rope: 1, at: tan(T_RIM + (Math.PI * W) / 2), from: 2.0, to: 9.9 },
   ],
   guides: [
     // La punta beige encabeza el pliegue hacia la derecha por el lado lejano; la curva rueda detrás
